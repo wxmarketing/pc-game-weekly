@@ -1,0 +1,322 @@
+{
+  "generated_at": "2026-04-01 21:23:27",
+  "platform": "TapTap",
+  "platform_id": "taptap",
+  "chart": "测试热度榜",
+  "chart_id": "test_hot",
+  "source": "DOM 解析",
+  "game_count": 20,
+  "games": [
+    {
+      "rank": 1,
+      "title": "归环",
+      "tags": [
+        "剧情",
+        "二次元",
+        "角色扮演"
+      ],
+      "price": "免费下载",
+      "rating": 8.1,
+      "description": "《归环》是一款全新的时间循环开放世界游戏。作为预言中的「归还者」，你将携手神秘的...",
+      "store_url": "https://www.taptap.cn/app/731238",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "预约"
+    },
+    {
+      "rank": 2,
+      "title": "妹居物语",
+      "tags": [
+        "模拟",
+        "角色扮演",
+        "休闲"
+      ],
+      "price": "免费下载",
+      "rating": 9.6,
+      "description": "有些日子，你回到家把包一丢，连说话的力气都没有。 无论这一天你在外面经历了什么，...",
+      "store_url": "https://www.taptap.cn/app/782330",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "参与测试"
+    },
+    {
+      "rank": 3,
+      "title": "灰烬之国",
+      "tags": [
+        "Roguelike",
+        "冒险",
+        "动作"
+      ],
+      "price": "免费下载",
+      "rating": 8.4,
+      "description": "《灰烬之国》是一款极致爽快的Rogue-lite动作游戏！自由组合一切你可以看到...",
+      "store_url": "https://www.taptap.cn/app/757286",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 4,
+      "title": "宝石战争",
+      "tags": [
+        "RPG",
+        "策略",
+        "卡牌"
+      ],
+      "price": "免费下载",
+      "rating": 9.4,
+      "description": "《宝石战争》超烧脑的RPG策略游戏来了！ 警告：本游戏非常费肝费时，肝就可以应有...",
+      "store_url": "https://www.taptap.cn/app/766061",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "预约"
+    },
+    {
+      "rank": 5,
+      "title": "指尖农场",
+      "tags": [
+        "放置",
+        "模拟",
+        "休闲"
+      ],
+      "price": "免费下载",
+      "rating": 9.3,
+      "description": "一款为忙碌工作党量身打造的桌面挂机治愈游戏。敲击键盘、点按鼠标的日常动作，就能自...",
+      "store_url": "https://www.taptap.cn/app/810595",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 6,
+      "title": "命运之手：人各有命",
+      "tags": [
+        "Roguelike",
+        "冒险",
+        "卡牌"
+      ],
+      "price": "免费下载",
+      "rating": 8.8,
+      "description": "- generic [ref=e236]: Roguelike",
+      "store_url": "https://www.taptap.cn/app/831055",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 7,
+      "title": "这是谐音梗",
+      "tags": [
+        "搞笑",
+        "休闲",
+        "文字"
+      ],
+      "price": "免费下载",
+      "rating": 9.4,
+      "description": "爆笑又上头的谐音梗猜词游戏！根据魔性的提示图片，大开脑洞，猜出那些离谱而又合理的...",
+      "store_url": "https://www.taptap.cn/app/802533",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "参与测试"
+    },
+    {
+      "rank": 8,
+      "title": "五星好市民",
+      "tags": [
+        "多人联机",
+        "开放世界",
+        "角色扮演"
+      ],
+      "price": "免费下载",
+      "rating": 7.6,
+      "description": "Hi, 各位五星好市民——欢迎来到这个充满“无限可能”的开放世界！（挠头GIF，...",
+      "store_url": "https://www.taptap.cn/app/752366",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 9,
+      "title": "魔法工艺",
+      "tags": [
+        "Steam移植",
+        "角色扮演",
+        "冒险"
+      ],
+      "price": "免费下载",
+      "rating": 8.4,
+      "description": "Steam移植",
+      "store_url": "https://www.taptap.cn/app/242283",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 10,
+      "title": "续杯咖啡",
+      "tags": [
+        "剧情",
+        "文字",
+        "休闲"
+      ],
+      "price": "免费下载",
+      "rating": 9.4,
+      "description": "续杯咖啡☕️ 一款以异头人外为主题的全性向陪伴型手机功能软件，陪伴玩家的上班搭子...",
+      "store_url": "https://www.taptap.cn/app/811705",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 11,
+      "title": "奶茶店模拟器——重生之我在冰堡甜城当店长",
+      "tags": [
+        "聚光灯GameJam",
+        "角色扮演",
+        "休闲"
+      ],
+      "price": "免费下载",
+      "rating": 7.1,
+      "description": "我重生了，重生在创业之初，上一世我因经营不善，最终奶茶店被对手碾碎。。。站在店铺...",
+      "store_url": "https://www.taptap.cn/app/779303",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "参与测试"
+    },
+    {
+      "rank": 12,
+      "title": "哀鸿：城破十日记",
+      "tags": [
+        "角色扮演",
+        "冒险",
+        "剧情"
+      ],
+      "price": "免费下载",
+      "rating": 9.5,
+      "description": "【游戏介绍】 明末崇祯十五年（1642年），书生方知宥因故人逝世而患上疯病。 故...",
+      "store_url": "https://www.taptap.cn/app/744231",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 13,
+      "title": "潜水员戴夫",
+      "tags": [],
+      "price": "免费下载",
+      "rating": 8.3,
+      "description": "年度大奖“轻松惬意”获得者，14W人打出96%好评如潮的海洋冒险游戏《潜水员戴夫...",
+      "store_url": "https://www.taptap.cn/app/755582",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 14,
+      "title": "见习死神",
+      "tags": [
+        "恋爱",
+        "解谜",
+        "角色扮演"
+      ],
+      "price": "免费下载",
+      "rating": 10.0,
+      "description": "《见习死神》是一款以短信聊天为核心的乙女向恋爱游戏。 玩家将扮演一名刚刚上岗的女...",
+      "store_url": "https://www.taptap.cn/app/784833",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 15,
+      "title": "大喜之日",
+      "tags": [
+        "聚光灯GameJam",
+        "角色扮演"
+      ],
+      "price": "免费下载",
+      "rating": 9.1,
+      "description": "融合老鼠嫁女民俗的叙事主导微恐rpg “爸妈 今天是大喜的日子” “为什么我却 ...",
+      "store_url": "https://www.taptap.cn/app/781320",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 16,
+      "title": "枪炮、公主与勇者",
+      "tags": [
+        "- img [ref=e553]",
+        "- generic [ref=e556]",
+        "Roguelike"
+      ],
+      "price": "免费下载",
+      "rating": null,
+      "description": "《枪炮、公主与勇者》是一款背包构筑+策略塔防的快节奏轻度Rogue游戏。扮演与龙...",
+      "store_url": "https://www.taptap.cn/app/767185",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "参与测试"
+    },
+    {
+      "rank": 17,
+      "title": "华夏史诗：战国",
+      "tags": [
+        "策略",
+        "角色扮演",
+        "冒险"
+      ],
+      "price": "免费下载",
+      "rating": 9.3,
+      "description": "《华夏史诗：战国》是一款以中国古代战国为背景的RPG+SLG开放世界单机游戏，在...",
+      "store_url": "https://www.taptap.cn/app/415447",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "参与测试"
+    },
+    {
+      "rank": 18,
+      "title": "小小的身影，重叠的内心",
+      "tags": [
+        "模拟",
+        "角色扮演",
+        "冒险"
+      ],
+      "price": "免费下载",
+      "rating": 9.8,
+      "description": "《小小的身影，重叠的内心》是由土豆花制作组制作的Galgame。你将扮演一名厌倦...",
+      "store_url": "https://www.taptap.cn/app/765842",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 19,
+      "title": "捏捏桌宠",
+      "tags": [
+        "桌宠",
+        "休闲",
+        "模拟"
+      ],
+      "price": "免费下载",
+      "rating": 9.7,
+      "description": "- generic [ref=e628]: 桌宠",
+      "store_url": "https://www.taptap.cn/app/825770",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    },
+    {
+      "rank": 20,
+      "title": "背包闯江湖",
+      "tags": [],
+      "price": "免费下载",
+      "rating": 8.9,
+      "description": "《背包闯江湖》是一款背包管理策略玩法的武侠吃鸡游戏，在每局游戏中，可从多个初始门...",
+      "store_url": "https://www.taptap.cn/app/790483",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "试玩 DEMO"
+    }
+  ]
+}

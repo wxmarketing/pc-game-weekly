@@ -1,0 +1,119 @@
+{
+  "chart_type": "most_played",
+  "chart_name": "最多人游玩游戏",
+  "source": "egdata.app",
+  "source_url": "https://egdata.app/collections/most-played",
+  "fetch_date": "2026-04-01",
+  "games": [
+    {
+      "rank": 1,
+      "name": "Fortnite",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 62,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/fortnite",
+      "egdata_url": null
+    },
+    {
+      "rank": 2,
+      "name": "Rocket League®",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 66,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/rocket-league",
+      "egdata_url": null
+    },
+    {
+      "rank": 3,
+      "name": "VALORANT",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 66,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/valorant",
+      "egdata_url": null
+    },
+    {
+      "rank": 4,
+      "name": "Grand Theft Auto V Enhanced",
+      "current_price_usd": 14.99,
+      "original_price_usd": 29.99,
+      "discount_percent": 50,
+      "weeks_on_chart": 55,
+      "is_free": false,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/grand-theft-auto-v-enhanced",
+      "egdata_url": null
+    },
+    {
+      "rank": 5,
+      "name": "Genshin Impact",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 66,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/genshin-impact",
+      "egdata_url": null
+    },
+    {
+      "rank": 6,
+      "name": "Honkai: Star Rail",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 66,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/honkai-star-rail",
+      "egdata_url": null
+    },
+    {
+      "rank": 7,
+      "name": "Hogwarts Legacy",
+      "current_price_usd": 59.99,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 56,
+      "is_free": false,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/hogwarts-legacy",
+      "egdata_url": null
+    },
+    {
+      "rank": 8,
+      "name": "Crosshair X",
+      "current_price_usd": 4.99,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 66,
+      "is_free": false,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/crosshair-x",
+      "egdata_url": null
+    },
+    {
+      "rank": 9,
+      "name": "Arknights: Endfield",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 9,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/arknights-endfield",
+      "egdata_url": null
+    },
+    {
+      "rank": 10,
+      "name": "Marvel Rivals",
+      "current_price_usd": 0.0,
+      "original_price_usd": null,
+      "discount_percent": null,
+      "weeks_on_chart": 66,
+      "is_free": true,
+      "epic_store_url": "https://store.epicgames.com/zh-CN/p/marvel-rivals",
+      "egdata_url": null
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "platform": "Epic Games Store",
+  "fetch_date": "2026-04-01",
+  "source": "egdata.app",
+  "charts": {
+    "top_sellers": {
+      "chart_type": "top_sellers",
+      "chart_name": "最畅销游戏",
+      "source": "egdata.app",
+      "source_url": "https://egdata.app/collections/top-sellers",
+      "fetch_date": "2026-04-01",
+      "games": [
+        {
+          "rank": 1,
+          "name": "EA SPORTS FC™ 26 Standard Edition",
+          "current_price_usd": 20.99,
+          "original_price_usd": 69.99,
+          "discount_percent": 70,
+          "weeks_on_chart": 26,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/ea-sports-fc-26-standard-edition",
+          "egdata_url": "https://egdata.app/offers/c28d94d0ed334be8be6e0abb2d11c50e"
+        },
+        {
+          "rank": 2,
+          "name": "Crimson Desert",
+          "current_price_usd": 69.99,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 1,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/crimson-desert",
+          "egdata_url": "https://egdata.app/offers/93fa632bf25b4361abb3a79c86e3f822"
+        },
+        {
+          "rank": 3,
+          "name": "Grand Theft Auto V Enhanced",
+          "current_price_usd": 14.99,
+          "original_price_usd": 29.99,
+          "discount_percent": 50,
+          "weeks_on_chart": 55,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/grand-theft-auto-v-enhanced",
+          "egdata_url": "https://egdata.app/offers/331226ba7c944720baa99103cb1fe80c"
+        },
+        {
+          "rank": 4,
+          "name": "Red Dead Redemption 2",
+          "current_price_usd": 14.99,
+          "original_price_usd": 59.99,
+          "discount_percent": 75,
+          "weeks_on_chart": 66,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/red-dead-redemption-2",
+          "egdata_url": "https://egdata.app/offers/a3c78a5c62824677834c1008e0be9b2d"
+        },
+        {
+          "rank": 5,
+          "name": "Dead by Daylight",
+          "current_price_usd": 19.99,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/dead-by-daylight",
+          "egdata_url": "https://egdata.app/offers/dc3a03c1ce5d467bb5db4693be7dbef8"
+        },
+        {
+          "rank": 6,
+          "name": "Cyberpunk 2077",
+          "current_price_usd": 20.99,
+          "original_price_usd": 59.99,
+          "discount_percent": 65,
+          "weeks_on_chart": 66,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/cyberpunk-2077",
+          "egdata_url": "https://egdata.app/offers/5e0277378de542ce9bf891d2f919d6c8"
+        },
+        {
+          "rank": 7,
+          "name": "Marvel's Spider-Man 2",
+          "current_price_usd": 40.19,
+          "original_price_usd": 59.99,
+          "discount_percent": 33,
+          "weeks_on_chart": 59,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/marvels-spider-man-2",
+          "egdata_url": "https://egdata.app/offers/5143c451be9b4e1ab9f3a0296d0bf5e7"
+        },
+        {
+          "rank": 8,
+          "name": "ARC Raiders",
+          "current_price_usd": 31.99,
+          "original_price_usd": 39.99,
+          "discount_percent": 20,
+          "weeks_on_chart": 22,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/arc-raiders",
+          "egdata_url": "https://egdata.app/offers/6e1b49b0a42f415b9fa77ca632059209"
+        },
+        {
+          "rank": 9,
+          "name": "Alan Wake 2",
+          "current_price_usd": 14.99,
+          "original_price_usd": 49.99,
+          "discount_percent": 70,
+          "weeks_on_chart": 66,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/alan-wake-2",
+          "egdata_url": "https://egdata.app/offers/a7364ebfa54147f1b90f78a81c8093f7"
+        },
+        {
+          "rank": 10,
+          "name": "Battlefield™ 6",
+          "current_price_usd": 41.99,
+          "original_price_usd": 69.99,
+          "discount_percent": 40,
+          "weeks_on_chart": 24,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/battlefield-6",
+          "egdata_url": "https://egdata.app/offers/a0bfa081c4aa4cacb59e6f512c130dc1"
+        }
+      ]
+    },
+    "most_played": {
+      "chart_type": "most_played",
+      "chart_name": "最多人游玩游戏",
+      "source": "egdata.app",
+      "source_url": "https://egdata.app/collections/most-played",
+      "fetch_date": "2026-04-01",
+      "games": [
+        {
+          "rank": 1,
+          "name": "Fortnite",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 62,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/fortnite",
+          "egdata_url": null
+        },
+        {
+          "rank": 2,
+          "name": "Rocket League®",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/rocket-league",
+          "egdata_url": null
+        },
+        {
+          "rank": 3,
+          "name": "VALORANT",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/valorant",
+          "egdata_url": null
+        },
+        {
+          "rank": 4,
+          "name": "Grand Theft Auto V Enhanced",
+          "current_price_usd": 14.99,
+          "original_price_usd": 29.99,
+          "discount_percent": 50,
+          "weeks_on_chart": 55,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/grand-theft-auto-v-enhanced",
+          "egdata_url": null
+        },
+        {
+          "rank": 5,
+          "name": "Genshin Impact",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/genshin-impact",
+          "egdata_url": null
+        },
+        {
+          "rank": 6,
+          "name": "Honkai: Star Rail",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/honkai-star-rail",
+          "egdata_url": null
+        },
+        {
+          "rank": 7,
+          "name": "Hogwarts Legacy",
+          "current_price_usd": 59.99,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 56,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/hogwarts-legacy",
+          "egdata_url": null
+        },
+        {
+          "rank": 8,
+          "name": "Crosshair X",
+          "current_price_usd": 4.99,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": false,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/crosshair-x",
+          "egdata_url": null
+        },
+        {
+          "rank": 9,
+          "name": "Arknights: Endfield",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 9,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/arknights-endfield",
+          "egdata_url": null
+        },
+        {
+          "rank": 10,
+          "name": "Marvel Rivals",
+          "current_price_usd": 0.0,
+          "original_price_usd": null,
+          "discount_percent": null,
+          "weeks_on_chart": 66,
+          "is_free": true,
+          "epic_store_url": "https://store.epicgames.com/zh-CN/p/marvel-rivals",
+          "egdata_url": null
+        }
+      ]
+    }
+  }
+}

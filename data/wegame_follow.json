@@ -1,0 +1,280 @@
+{
+  "generated_at": "2026-04-01 21:23:27",
+  "platform": "WeGame",
+  "platform_id": "wegame",
+  "chart": "新游预约榜（预约之星）",
+  "chart_id": "follow",
+  "source": "DOM 解析",
+  "game_count": 15,
+  "games": [
+    {
+      "rank": 1,
+      "title": "王者荣耀世界",
+      "tags": [
+        "冒险RPG",
+        "高画质",
+        "剧情丰富",
+        "爽快手感"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001829",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 265053
+    },
+    {
+      "rank": 2,
+      "title": "失控进化 - RUST玩法授权",
+      "tags": [
+        "生存",
+        "沙盒建造",
+        "开放世界",
+        "FPS"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002423",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 24891
+    },
+    {
+      "rank": 3,
+      "title": "异人之下",
+      "tags": [
+        "动作RPG",
+        "动作格斗",
+        "网络游戏",
+        "RPG"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001933",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 23819
+    },
+    {
+      "rank": 4,
+      "title": "灰境行者",
+      "tags": [
+        "FPS",
+        "战术射击",
+        "高画质",
+        "虚幻5引擎"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002521",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 10681
+    },
+    {
+      "rank": 5,
+      "title": "伊莫",
+      "tags": [
+        "开放世界",
+        "高画质",
+        "高自由度",
+        "冒险RPG"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002649",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 6064
+    },
+    {
+      "rank": 6,
+      "title": "彩虹六号：攻势",
+      "tags": [
+        "FPS",
+        "战术射击",
+        "高画质",
+        "爽快手感"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002315",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 3980
+    },
+    {
+      "rank": 7,
+      "title": "地下城与勇士：卡赞",
+      "tags": [
+        "动作RPG",
+        "剧情丰富",
+        "爽快手感",
+        "高画质"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002353",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 3284
+    },
+    {
+      "rank": 8,
+      "title": "王者万象棋",
+      "tags": [
+        "卡牌",
+        "自走棋",
+        "网络游戏"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002548",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 2872
+    },
+    {
+      "rank": 9,
+      "title": "双影奇境-好友通行证",
+      "tags": [
+        "动作RPG",
+        "本地合作",
+        "虚幻5引擎",
+        "冒险RPG"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2008734",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 2447
+    },
+    {
+      "rank": 10,
+      "title": "粒粒的小人国",
+      "tags": [
+        "模拟经营",
+        "休闲",
+        "高自由度",
+        "高画质"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002539",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 1921
+    },
+    {
+      "rank": 11,
+      "title": "卡厄思梦境",
+      "tags": [
+        "二次元",
+        "卡牌",
+        "Rogue-like",
+        "高画质"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002460",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 1408
+    },
+    {
+      "rank": 12,
+      "title": "奇迹MU",
+      "tags": [
+        "MMORPG",
+        "西方魔幻",
+        "高自由度",
+        "网络游戏"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002711",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 821
+    },
+    {
+      "rank": 13,
+      "title": "命运扳机",
+      "tags": [
+        "大逃杀",
+        "英雄射击",
+        "战术射击",
+        "高画质"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002428",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 631
+    },
+    {
+      "rank": 14,
+      "title": "湮灭之潮",
+      "tags": [
+        "动作RPG",
+        "爽快手感",
+        "剧情丰富",
+        "高画质"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002390",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 398
+    },
+    {
+      "rank": 15,
+      "title": "天堂2：盟约",
+      "tags": [
+        "MMORPG",
+        "西方魔幻",
+        "高画质",
+        "剧情丰富"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002433",
+      "platform": "WeGame",
+      "chart": "新游预约榜",
+      "cover_image": "",
+      "weekly_follows": 239
+    }
+  ]
+}

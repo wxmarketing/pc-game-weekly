@@ -1,0 +1,331 @@
+{
+  "generated_at": "2026-04-01 21:23:27",
+  "platform": "TapTap",
+  "platform_id": "taptap",
+  "chart": "热门下载榜",
+  "chart_id": "hot_download",
+  "source": "DOM 解析",
+  "game_count": 20,
+  "games": [
+    {
+      "rank": 1,
+      "title": "洛克王国：世界",
+      "tags": [
+        "抓宠",
+        "回合制",
+        "养成"
+      ],
+      "price": "免费下载",
+      "rating": 6.6,
+      "description": "《洛克王国：世界》是腾讯魔方工作室群自主研发的精灵大世界游戏。基于童年回忆“洛克...",
+      "store_url": "https://www.taptap.cn/app/188212",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 2,
+      "title": "火炬之光：无限",
+      "tags": [
+        "ARPG",
+        "刷宝",
+        "高画质"
+      ],
+      "price": "免费下载",
+      "rating": 7.2,
+      "description": "月升，月落；乐起，乐终。 局内玩法回归，全新赛季&#34;明月狂想曲&#34;将于4月17日10...",
+      "store_url": "https://www.taptap.cn/app/172664",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 3,
+      "title": "三角洲行动",
+      "tags": [
+        "搜打撤",
+        "生存",
+        "射击"
+      ],
+      "price": "免费下载",
+      "rating": 5.2,
+      "description": "《三角洲行动》是一款由琳琅天上团队研发运营的新一代战术射击品质标杆游戏。 交战搜...",
+      "store_url": "https://www.taptap.cn/app/330259",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 4,
+      "title": "和平精英",
+      "tags": [
+        "多人联机",
+        "射击",
+        "FPS"
+      ],
+      "price": "免费下载",
+      "rating": 7.1,
+      "description": "【游戏介绍】 《和平精英》是腾讯光子工作室群自研打造的战术竞技手游。虚幻引擎4...",
+      "store_url": "https://www.taptap.cn/app/70056",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 5,
+      "title": "超自然行动组",
+      "tags": [
+        "合作",
+        "密室",
+        "盗墓"
+      ],
+      "price": "免费下载",
+      "rating": 6.7,
+      "description": "一个人玩是恐怖游戏，两个人玩是冒险游戏，三个人玩是寻宝游戏，四个人玩是搞笑游戏，...",
+      "store_url": "https://www.taptap.cn/app/714123",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 6,
+      "title": "原神",
+      "tags": [
+        "开放世界",
+        "二次元",
+        "角色扮演"
+      ],
+      "price": "免费下载",
+      "rating": 7.8,
+      "description": "在七种元素交汇的大陆——「提瓦特」，每个人都可以成为神。 你从世界之外漂流而来...",
+      "store_url": "https://www.taptap.cn/app/168332",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 7,
+      "title": "心动小镇",
+      "tags": [
+        "模拟经营",
+        "治愈",
+        "多人联机"
+      ],
+      "price": "免费下载",
+      "rating": 8.8,
+      "description": "直播时间：18:00-23:00 《心动小镇》是一款慢节奏生活模拟游戏。无论拥有...",
+      "store_url": "https://www.taptap.cn/app/45213",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 8,
+      "title": "迷你世界",
+      "tags": [
+        "开放世界",
+        "像素",
+        "可爱"
+      ],
+      "price": "免费下载",
+      "rating": 3.7,
+      "description": "《迷你世界》是一款高度自由的3D沙盒游戏，这里没有等级和规则限制，这里没有特定的...",
+      "store_url": "https://www.taptap.cn/app/7054",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 9,
+      "title": "无限暖暖",
+      "tags": [
+        "开放世界",
+        "多人联机",
+        "收集"
+      ],
+      "price": "免费下载",
+      "rating": 6.5,
+      "description": "《无限暖暖》是由叠纸游戏开发的暖暖系列第五代作品，是一款由UE5引擎打造的多平台...",
+      "store_url": "https://www.taptap.cn/app/247283",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 10,
+      "title": "鸣潮",
+      "tags": [
+        "开放世界",
+        "动作",
+        "ARPG"
+      ],
+      "price": "免费下载",
+      "rating": 7.1,
+      "description": "漂泊的旅人，欢迎在这里醒来。 涨落无声，我们的世界刚刚经历一场退潮。 悲鸣降临，...",
+      "store_url": "https://www.taptap.cn/app/234280",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 11,
+      "title": "香肠派对",
+      "tags": [
+        "射击",
+        "吃鸡",
+        "战斗"
+      ],
+      "price": "免费下载",
+      "rating": 8.6,
+      "description": "- generic [ref=e443]: 射击",
+      "store_url": "https://www.taptap.cn/app/58881",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 12,
+      "title": "无畏契约",
+      "tags": [
+        "射击",
+        "多人联机",
+        "竞技"
+      ],
+      "price": "免费下载",
+      "rating": 5.9,
+      "description": "《无畏契约》,又名VALORANT，是《英雄联盟》开发商拳头游戏开发、腾讯代理、...",
+      "store_url": "https://www.taptap.cn/app/337799",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 13,
+      "title": "燕云十六声",
+      "tags": [
+        "开放世界",
+        "动作",
+        "武侠"
+      ],
+      "price": "免费下载",
+      "rating": 7.0,
+      "description": "《燕云十六声》首次实现了“中国特色武功”与开放世界品类的融合，玩家将在充满谜题的...",
+      "store_url": "https://www.taptap.cn/app/239372",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 14,
+      "title": "桃源深处有人家",
+      "tags": [
+        "种田",
+        "收集",
+        "治愈"
+      ],
+      "price": "免费下载",
+      "rating": 7.4,
+      "description": "《桃源深处有人家》是一款悠然治愈的国风山水田园经营手游。 回到心中的故乡，远离尘...",
+      "store_url": "https://www.taptap.cn/app/202416",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 15,
+      "title": "明日方舟：终末地",
+      "tags": [
+        "二次元",
+        "角色扮演",
+        "模拟经营"
+      ],
+      "price": "免费下载",
+      "rating": 5.1,
+      "description": "欢迎来到塔卫二，这是一个美丽却遍布危机的世界。这个世界的访客，曾经的开拓者们，克...",
+      "store_url": "https://www.taptap.cn/app/232326",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 16,
+      "title": "明日方舟",
+      "tags": [
+        "塔防",
+        "二次元",
+        "养成"
+      ],
+      "price": "免费下载",
+      "rating": 8.1,
+      "description": "起因不明并四处肆虐的天灾，席卷过的土地上出现了大量的神秘矿物——被人们称为“源石...",
+      "store_url": "https://www.taptap.cn/app/70253",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 17,
+      "title": "崩坏：星穹铁道",
+      "tags": [
+        "角色扮演",
+        "冒险",
+        "策略"
+      ],
+      "price": "免费下载",
+      "rating": 7.4,
+      "description": "这片银河中有名为「星神」的存在，祂们造就现实，抹消星辰，在无数「世界」中留下祂们...",
+      "store_url": "https://www.taptap.cn/app/224267",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 18,
+      "title": "月圆之夜",
+      "tags": [
+        "卡牌",
+        "自走棋",
+        "策略"
+      ],
+      "price": "免费下载",
+      "rating": 8.6,
+      "description": "狂欢&amp;对决 双模式重磅更新 单机模式秘宝对决，联机模式狂欢游乐园启幕 1月 2...",
+      "store_url": "https://www.taptap.cn/app/58885",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 19,
+      "title": "蔚蓝档案",
+      "tags": [
+        "卡牌",
+        "剧情",
+        "美少女"
+      ],
+      "price": "免费下载",
+      "rating": 8.4,
+      "description": "「这一天，联邦理事会长失踪了——」 《蔚蓝档案》是一款由韩国NEXON Gam...",
+      "store_url": "https://www.taptap.cn/app/316964",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    },
+    {
+      "rank": 20,
+      "title": "绝区零",
+      "tags": [
+        "二次元",
+        "ARPG",
+        "高画质"
+      ],
+      "price": "免费下载",
+      "rating": 6.7,
+      "description": "不要进入空洞。 我知道我知道，空洞里有以太资源、有异化造物、甚至有旧文明的遗产，...",
+      "store_url": "https://www.taptap.cn/app/234493",
+      "platform": "TapTap",
+      "cover_image": "",
+      "test_status": "免费下载"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/steam/top-sellers?cc=CN",
+      "schedule": "30 16 * * *"
+    }
+  ]
+}
+

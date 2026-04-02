@@ -1,0 +1,269 @@
+{
+  "generated_at": "2026-04-01 21:23:27",
+  "platform": "WeGame",
+  "platform_id": "wegame",
+  "chart": "本周热销榜",
+  "chart_id": "purchase",
+  "source": "DOM 解析",
+  "game_count": 15,
+  "games": [
+    {
+      "rank": 1,
+      "title": "饥荒：联机版",
+      "tags": [
+        "开放世界",
+        "独立游戏",
+        "沙盒建造",
+        "单机游戏"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2000004",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 2,
+      "title": "基础版-创始人资格包",
+      "tags": [
+        "动作RPG",
+        "MMORPG",
+        "西方魔幻",
+        "冒险RPG"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002505",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 3,
+      "title": "星露谷物语",
+      "tags": [
+        "模拟经营",
+        "沙盒建造",
+        "像素风格",
+        "独立游戏"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2000064",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 4,
+      "title": "逃离鸭科夫",
+      "tags": [
+        "掠夺者射击",
+        "生存",
+        "俯视角",
+        "独立游戏"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002350",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 5,
+      "title": "拣爱",
+      "tags": [
+        "独立游戏",
+        "解谜",
+        "手绘画风",
+        "唯美浪漫"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001448",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 6,
+      "title": "黑神话：悟空",
+      "tags": [
+        "西游",
+        "冒险RPG",
+        "动作RPG",
+        "神话"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002122",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 7,
+      "title": "黑神话：悟空 数字豪华版",
+      "tags": [
+        "冒险RPG",
+        "动作RPG",
+        "神话",
+        "西游"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002153",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 8,
+      "title": "古龙风云录",
+      "tags": [
+        "武侠",
+        "开放世界",
+        "国风",
+        "剧情丰富"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001937",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 9,
+      "title": "龙胤立志传",
+      "tags": [
+        "开放世界",
+        "冒险RPG",
+        "战棋",
+        "模拟经营"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2008708",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 10,
+      "title": "饥荒单机豪华包",
+      "tags": [
+        "动作RPG",
+        "开放世界",
+        "沙盒建造",
+        "休闲"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2000713",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 11,
+      "title": "激战2 - 烈焰征途标准版",
+      "tags": [
+        "DLC",
+        "沙盒建造",
+        "MMORPG",
+        "开放世界",
+        "网络游戏"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001206",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 12,
+      "title": "激战2 - 永恒愿景标准版",
+      "tags": [
+        "DLC",
+        "沙盒建造",
+        "开放世界",
+        "西方魔幻",
+        "MMORPG"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002542",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 13,
+      "title": "饥荒：单机版",
+      "tags": [
+        "沙盒建造",
+        "动作RPG",
+        "开放世界",
+        "休闲"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2000013",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 14,
+      "title": "激战2 - 巨龙绝境标准版",
+      "tags": [
+        "DLC",
+        "沙盒建造",
+        "开放世界",
+        "MMORPG",
+        "西方魔幻"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001704",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 15,
+      "title": "仙剑奇侠传四 配音版",
+      "tags": [
+        "冒险RPG",
+        "剧情丰富",
+        "仙俠",
+        "RPG"
+      ],
+      "price": "未知",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2000153",
+      "platform": "WeGame",
+      "chart": "本周热销榜",
+      "cover_image": ""
+    }
+  ]
+}

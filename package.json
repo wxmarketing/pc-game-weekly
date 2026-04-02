@@ -1,0 +1,33 @@
+{
+  "name": "pc-game-weekly",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:local": "next dev --hostname 127.0.0.1 --port 3000",
+    "dev:restart": "node scripts/restart-dev.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "import:browser-share:statcounter": "tsx scripts/import_statcounter_browser_share.ts",
+    "seed:static-series": "tsx scripts/seed_supabase_static_series.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
+    "dotenv": "^17.3.1",
+    "next": "16.2.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

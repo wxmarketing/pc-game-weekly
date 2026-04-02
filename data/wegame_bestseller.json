@@ -1,0 +1,266 @@
+{
+  "generated_at": "2026-04-01 21:23:27",
+  "platform": "WeGame",
+  "platform_id": "wegame",
+  "chart": "火爆新品榜",
+  "chart_id": "bestseller",
+  "source": "DOM 解析",
+  "game_count": 15,
+  "games": [
+    {
+      "rank": 1,
+      "title": "洛克王国：世界",
+      "tags": [
+        "MMORPG",
+        "开放世界",
+        "回合制",
+        "社交"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002304",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 2,
+      "title": "新天龙八部怀旧服",
+      "tags": [
+        "MMORPG",
+        "武侠",
+        "国风",
+        "唯美浪漫"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001788",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 3,
+      "title": "彩虹岛Online",
+      "tags": [
+        "休闲",
+        "横版",
+        "MMORPG",
+        "动作RPG"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002277",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 4,
+      "title": "逆战：未来",
+      "tags": [
+        "FPS",
+        "机甲",
+        "科幻",
+        "开放世界"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002130",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 5,
+      "title": "问道",
+      "tags": [
+        "神话",
+        "仙俠",
+        "MMORPG",
+        "国风"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001617",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 6,
+      "title": "流放之路",
+      "tags": [
+        "MMORPG",
+        "暗黑风格",
+        "魔幻",
+        "免费"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/511",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 7,
+      "title": "荒原曙光",
+      "tags": [
+        "生存",
+        "沙盒建造",
+        "冒险RPG",
+        "开放世界"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002448",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 8,
+      "title": "桃源深处有人家",
+      "tags": [
+        "模拟经营",
+        "国风",
+        "休闲",
+        "唯美浪漫"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002519",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 9,
+      "title": "名将杀",
+      "tags": [
+        "卡牌",
+        "三国",
+        "历史题材",
+        "解谜"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002673",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 10,
+      "title": "二重螺旋",
+      "tags": [
+        "二次元",
+        "动作RPG",
+        "TPS",
+        "西方魔幻"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002442",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 11,
+      "title": "终极角逐（THE FINALS）",
+      "tags": [
+        "FPS",
+        "战术射击",
+        "高画质",
+        "爽快手感"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002270",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 12,
+      "title": "特种部队：集结",
+      "tags": [
+        "FPS",
+        "TPS",
+        "战术射击",
+        "英雄射击"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002602",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 13,
+      "title": "轩辕传奇：创世",
+      "tags": [
+        "MMORPG",
+        "国风",
+        "仙俠",
+        "网络游戏"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2001976",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 14,
+      "title": "逃离鸭科夫",
+      "tags": [
+        "掠夺者射击",
+        "生存",
+        "俯视角",
+        "独立游戏"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002350",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    },
+    {
+      "rank": 15,
+      "title": "元梦之星-山海寻灵",
+      "tags": [
+        "开放世界",
+        "MMORPG",
+        "高自由度",
+        "休闲"
+      ],
+      "price": "免费开玩",
+      "rating": null,
+      "description": "",
+      "store_url": "https://www.wegame.com.cn/store/2002532",
+      "platform": "WeGame",
+      "chart": "火爆新品榜",
+      "cover_image": ""
+    }
+  ]
+}

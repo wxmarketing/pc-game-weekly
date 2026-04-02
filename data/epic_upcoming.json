@@ -1,0 +1,496 @@
+{
+  "generated_at": "2026-04-01 21:23:27",
+  "platform": "Epic Games Store",
+  "platform_id": "epic",
+  "chart": "全部即将推出",
+  "chart_id": "upcoming",
+  "source": "GraphQL API",
+  "game_count": 30,
+  "games": [
+    {
+      "rank": 1,
+      "title": "Elementals Beta",
+      "tags": [
+        "Online Multiplayer",
+        "First Run",
+        "Fantasy",
+        "RPG",
+        "Cross Platform",
+        "Indie"
+      ],
+      "price": "¥31.00",
+      "rating": null,
+      "description": "Elementals Beta is a multiplayer roleplay game where you harness the elements of the universe to defeat fearsome enemies and friends.",
+      "store_url": "https://store.epicgames.com/zh-CN/p/34df18d190ca4728a7b3150fb0a9632d",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/1b340af30c8d44588b08261608e96faf/elementals-beta-bci8d.png",
+      "developer": "Nanite Studios"
+    },
+    {
+      "rank": 2,
+      "title": "Undead Inc.",
+      "tags": [
+        "Action",
+        "Simulation",
+        "Strategy"
+      ],
+      "price": "¥92.00",
+      "rating": null,
+      "description": "《Undead Inc.》是一款高风险、高回报的资源管理模拟游戏，您要在地方上打造并管理一间 Endswell 医疗集团的子公司。建造、管理员工、进行研究，并开发出创新疗法和最尖端的生物武器。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/8840f3466cef4c23a8b32a6eca158a36",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/064be6dee1ed4d2dad4aef5fd3efafa9/undead-inc-1bfyw.jpg",
+      "developer": "Team17 Digital Ltd"
+    },
+    {
+      "rank": 3,
+      "title": "Steal, Then Just Escape: The Real Thrill",
+      "tags": [
+        "Action",
+        "Competitive",
+        "Survival",
+        "Indie"
+      ],
+      "price": "¥110.00",
+      "rating": null,
+      "description": "Steal, Then Just Escape: The Real Thrill has ReTurn to Coming Soon! After PostPoning the ReLaunch in February. I would like you to know that the game will be back on Coming Soon! Stage. Now, this is R",
+      "store_url": "https://store.epicgames.com/zh-CN/p/c614ba30ba154a7f97e4a17c25de235f",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/ca3efd1bce1344b69070ecc8da8f585d/steal-then-just-escape-1d6m7.png",
+      "developer": "ReTigma Studio"
+    },
+    {
+      "rank": 4,
+      "title": "Foxyball",
+      "tags": [
+        "Co-op",
+        "Casual",
+        "Sports",
+        "Local Multiplayer",
+        "Indie"
+      ],
+      "price": "¥25.00",
+      "rating": null,
+      "description": "Foxyball是一款玩法丰富的精品休闲游戏，玩家将挑战随机生成的球门，需结合运气、技巧与英明决策才能挑战高分。游戏提供四种游玩模式，不仅能陪伴你度过闲暇的独处时光，还能为情侣二人世界、亲子互动启蒙、家庭聚会、社交派对等场景增添无穷乐趣。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/4dd4c78438a043b4a17030e090ba9eef",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/1302df3ff28e4d0eb8809ed831047476/foxyball-xnqqc.png",
+      "developer": "Ryan Wong dba Hayen Interactive Entertainment Limited Company"
+    },
+    {
+      "rank": 5,
+      "title": "My Friendly Neighborhood",
+      "tags": [
+        "Horror",
+        "Shooter",
+        "First Person"
+      ],
+      "price": "¥93.00",
+      "rating": null,
+      "description": "Something scary is happening with everyone's favorite Saturday morning puppet show, The Friendly Neighborhood! Play as Gordon, a repairman sent to get to the bottom of this disturbing dilemma. Fend of",
+      "store_url": "https://store.epicgames.com/zh-CN/p/1af1447715ac45ac9a1b070b1e0e926a",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/be3dacf98e9a4b23bb7ace4355bd2437/my-friendly-neighborhood-hhnh8.png",
+      "developer": "DreadXP"
+    },
+    {
+      "rank": 6,
+      "title": "Total War: PHARAOH",
+      "tags": [
+        "Action",
+        "Multiplayer",
+        "Strategy"
+      ],
+      "price": "¥289.00",
+      "rating": null,
+      "description": "Total War: PHARAOH, the newest entry in the award-winning strategy series, immerses you in ancient Egypt at the zenith of its power. Master dynamic real-time battles, forge a lasting empire and stand ",
+      "store_url": "https://store.epicgames.com/zh-CN/p/total-war-pharaoh",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/offer/3928d2045d28460b96db76dc1b9ca146/EGS_TotalWarPHARAOH_CreativeAssembly_S1_2560x1440-244cdb9081c4ef6985a41dd04892d958",
+      "developer": "SEGA of Europe"
+    },
+    {
+      "rank": 7,
+      "title": "Fossil Skater",
+      "tags": [
+        "Racing"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "This version is the original game built from the ground up in approximately 4 weeks of the Unreal Fellowship (Games, Americas) 2024.",
+      "store_url": "https://store.epicgames.com/zh-CN/p/3c9507a4b1784d85b1533344b2ee6248",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/fa469f5b2bd2468db52a6e9503513fd0/fossil-skater-18j7b.jpg",
+      "developer": "MUSHOGENSHIN MEDIA LLC"
+    },
+    {
+      "rank": 8,
+      "title": "Robocraft 2",
+      "tags": [
+        "Action",
+        "Online Multiplayer",
+        "Simulation",
+        "Shooter"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "由一千六百多万人玩过的开创性游戏的续集！体验在线玩家战车大对决游戏，激情迸裂，选择无限，完全免费。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/1e32018043374798867973b80d30561a",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/3c2e51e6eebc4f5c9ef90ce5f8532cc9/robocraft-2-10x4n.png",
+      "developer": "Freejam Ltd"
+    },
+    {
+      "rank": 9,
+      "title": "Dangerous Waters",
+      "tags": [
+        "Strategy"
+      ],
+      "price": "¥30.00",
+      "rating": null,
+      "description": "S.C.S. - Dangerous Waters allows you total control over multiple air, surface, and submarine platforms in a modern-day naval environment. Take direct control of individual crew stations and also plan ",
+      "store_url": "https://store.epicgames.com/zh-CN/p/e725cc46e1be4b41b12187379aada42d",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/7eef5e2edf814daeb5ef95277acc4861/dangerous-waters-offer-12fua.png",
+      "developer": "Strategy First"
+    },
+    {
+      "rank": 10,
+      "title": "Matchpoint - Tennis Championships",
+      "tags": [
+        "Simulation",
+        "Multiplayer",
+        "Sports",
+        "Competitive"
+      ],
+      "price": "¥199.00",
+      "rating": null,
+      "description": "游戏简介：\n赛季开始啦 - 拿起你的球拍，成为下一个世界网球冠军！\n\n你的对手在球场上，观众在等待一位有希望的挑战者进入决赛... 你准备好加入比赛了吗？",
+      "store_url": "https://store.epicgames.com/zh-CN/p/a8245476c9434f82985f0725b41e4407",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/4de80dedf83c4a45993954be6a82eb37/matchpoint-tennis-championships-offer-1ypkx.jpg",
+      "developer": "Kalypso Media Group GmbH"
+    },
+    {
+      "rank": 11,
+      "title": "《Tower of Fantasy》",
+      "tags": [
+        "Multiplayer",
+        "RPG",
+        "Open World"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "一起踏上属于你的幻想冒险！\n《Tower of Fantasy》是一款以未来数百年后，偏远的 Aida 行星为舞台的动漫风格科幻冒险共享开放世界角色扮演游戏，很快将于Epic游戏商城在全球范围推出。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/toweroffantasy",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/offer/a1044097d6a24080a3aa04b1909ca089/EGS_TowerofFantasy_HOTTASTUDIO_S1_2560x1440-7332c6b84fdf52884c1a0ae1eb6830e1",
+      "developer": "Perfect World Korea Co., Ltd."
+    },
+    {
+      "rank": 12,
+      "title": "Survival Advanced",
+      "tags": [
+        "Exploration",
+        "Adventure",
+        "Indie"
+      ],
+      "price": "¥128.00",
+      "rating": null,
+      "description": "Welcome to the reef ! Here, you are free to do as you please, but be cautious... some islands are full of danger. To protect yourself, explore, build your shelter, arm yourself, and conquer your enemi",
+      "store_url": "https://store.epicgames.com/zh-CN/p/1266ad5f994b4579aa4e95a943e53ad0",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/ca3f36978db144e196d0b91b45c92b0e/survival-advanced-15t9t.jpg",
+      "developer": "FORCEFORE"
+    },
+    {
+      "rank": 13,
+      "title": "Repression",
+      "tags": [
+        "Action",
+        "MMO",
+        "Survival",
+        "Open World"
+      ],
+      "price": "¥78.00",
+      "rating": null,
+      "description": "Embark on a thrilling prehistoric adventure! Harvest resources, form tribes, build bases, survive against dinosaurs, and battle other players. Test your skills, conquer the wilderness, and prove your ",
+      "store_url": "https://store.epicgames.com/zh-CN/p/c760e3c1f2da41e0839d0b23ee49b984",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/8aeac8f1651f49b38d7f7edbb57621ff/repression-l4pvl.jpg",
+      "developer": "MP Inventions"
+    },
+    {
+      "rank": 14,
+      "title": "Judas",
+      "tags": [
+        "Action",
+        "FPS"
+      ],
+      "price": "¥618.00",
+      "rating": null,
+      "description": "A disintegrating starship. A desperate escape plan. You are the mysterious and troubled Judas. Your only hope for survival is to make or break alliances with your worst enemies.",
+      "store_url": "https://store.epicgames.com/zh-CN/p/judas",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/spt-assets/ea793ee3dc1e427480f1643ab4a2fb47/judas-1sh1v.jpg",
+      "developer": "Ghost Story Games"
+    },
+    {
+      "rank": 15,
+      "title": "PixelJunk Eden 2",
+      "tags": [
+        "Co-op",
+        "Multiplayer",
+        "Adventure",
+        "Platformer",
+        "Indie"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "Return to the gardens of light and sound in this hypnotic platforming adventure from the award-winning PixelJunk series. Brought to life in stunning 4K with both art direction and a mesmerising soundt",
+      "store_url": "https://store.epicgames.com/zh-CN/p/pixeljunk-eden-2",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/offer/c7d240a44afd4e0ba06780cfc6fc5884/EGS_PixelJunkEden2_QGames_S1_2560x1440-38fa5540cf97e475cf57f6a3be361743",
+      "developer": "Q Games"
+    },
+    {
+      "rank": 16,
+      "title": "《Out of Words》",
+      "tags": [
+        "Co-op",
+        "Adventure",
+        "Platformer"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "手工打造的双人合作之旅",
+      "store_url": "https://store.epicgames.com/zh-CN/p/out-of-words",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/offer/8a99a8abdf214007952a404426ecfe52/EGS_OutofWords_KongOrangeWiredFlyandMortenSndergaard_S1_2560x1440-94db65365f25d2c0f2c056ff23b57193",
+      "developer": "Epic Games Publishing"
+    },
+    {
+      "rank": 17,
+      "title": "《The Anacrusis》",
+      "tags": [
+        "Co-op",
+        "FPS",
+        "Multiplayer"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "《The Anacrusis》是个四人玩家，合作，和第一人称的射击游戏，舞台处于被困于宇宙边缘的太空飞船之上。与你的朋友们在无限可重玩的战斗中合作对抗一群外星人来解锁技能，武器，还有更多可以与团队分享的游戏方法！",
+      "store_url": "https://store.epicgames.com/zh-CN/p/the-anacrusis",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_TheAnacrusis_StrayBombay_S1_2560x1440-c427a338676fb344c16c3865ed2deb84",
+      "developer": "Stray Bombay Company"
+    },
+    {
+      "rank": 18,
+      "title": "《End of Abyss》",
+      "tags": [
+        "Action",
+        "Adventure"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "扮演年轻的战斗技术员 Cel，直面游荡于此的恐怖怪物，同时揭开设施荒废区域的真相。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/end-of-abyss",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/offer/68eb3279026c4aa2ab6ec1395d7b7b77/EGS_EndofAbyss_Section9Interactive_S1_2560x1440-bafaeca6dd61926d2b940ac82aebfffc",
+      "developer": "Epic Games Publishing"
+    },
+    {
+      "rank": 19,
+      "title": "《GALAHAD 3093》",
+      "tags": [
+        "Action",
+        "Multiplayer",
+        "Shooter"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "《GALAHAD 3093》是一款设定于科幻未来，带有亚瑟王传奇色彩的机甲英雄射击游戏。选择你的骑士（Knight），自由打造他们的长枪（Lance）机甲，在 32 玩家竞技场中战斗。收集模组和武器来升级你的长枪机甲，打造属于你的战斗风格。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/galahad-3093",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/7a6c7ce416d7436895e12c94917eb5f9/offer/EGS_Amechbasedheroshootersetin3093_SimutronicsCorp_S3-2560x1440-48b0044bc809e2d3a5d1ac571f5b6ce0.jpg",
+      "developer": "Simutronics"
+    },
+    {
+      "rank": 20,
+      "title": "《Rollers of the Realm: Reunion》",
+      "tags": [
+        "Co-op",
+        "RPG",
+        "Indie"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "五位具有独特数值、物理属性以及升级选项的弹珠英雄需要在史诗战役中上下翻转，加速冲刺，通过弹射来进行战斗。在这款结合了街机动作要素与角色扮演进度机制的游戏中，你将对抗上古的力量，并重燃被遗忘的盟约。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/rollers-of-the-realm-reunion",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_RollersofTheRealmReunion_PhantomCompass_S1_2560x1440-3b714b18a986b5cc32cecd1dce1e7bd5",
+      "developer": "Phantom Compass Inc"
+    },
+    {
+      "rank": 21,
+      "title": "Read Only Memories: NEURODIVER",
+      "tags": [
+        "Investigation",
+        "Indie"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "Read Only Memories: NEURODIVER",
+      "store_url": "https://store.epicgames.com/zh-CN/p/read-only-memories-neurodiver",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/f5dc09de21044dc093fd4dbbab699a07/offer/EGS_ReadOnlyMemoriesNEURODIVER_MidBossLLC_S1-2560x1440-64165dd8c40eedfe1c19e196e6cf39bb.jpg",
+      "developer": "MidBoss, LLC"
+    },
+    {
+      "rank": 22,
+      "title": "《Escape The Loop》",
+      "tags": [
+        "Exploration",
+        "Adventure",
+        "Indie"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "如果我告诉你，这一切都已经发生过了会怎样？你早已读过这段文字，你也早已看过这些游戏截图，你更早已看过本预告片。不止一次，而是成百上千次。可能还更多。而且，在五分钟之内，你就会忘掉这一切——然后重新再来。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/escape-the-loop",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_EscapeTheLoop_PixelManiacs_S1_2560x1440-3ac22aa2f3a3693b99c2cc167408981e",
+      "developer": "Benjamin Lochmann New Media GmbH"
+    },
+    {
+      "rank": 23,
+      "title": "Rune Fencer Illyia",
+      "tags": [
+        "Exploration",
+        "Adventure",
+        "Metroidvania"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "Rune Fencer Illyia is an intense, atmospheric action-platformer with a heavy focus on exploration and combat. Traverse an enormous and dangerous world, meet strange allies, and outfight your numerous ",
+      "store_url": "https://store.epicgames.com/zh-CN/p/rune-fencer-illyia",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_RuneFencerIllyia_NootboxGames_S1_2560x1440-e73658c645aea060a40652776f590aa5",
+      "developer": "Nootbox Games"
+    },
+    {
+      "rank": 24,
+      "title": "《Exotic Cars VI》",
+      "tags": [
+        "Action",
+        "Multiplayer",
+        "Open World",
+        "Adventure"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "此游戏将映射现实生活。当某个品牌推出新产品时，游戏内也会同步推出。这将使玩家能够轻松地融入整个游戏世界。玩家可在其中享用各种饮食、驾驶任意品牌的汽车、购买服装等。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/exotic-cars-vi",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_ExoticCarsVI_LanyGamesInc_S1_2560x1440-debab7556682ccdc0915bf6e39bbf988",
+      "developer": "Lany Games Inc S.A de C.V."
+    },
+    {
+      "rank": 25,
+      "title": "《REPLACED》",
+      "tags": [
+        "Action",
+        "Platformer",
+        "Indie"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "《REPLACED》是一款 2.5D 科幻复古未来风动作平台游戏，你将扮演 R.E.A.C.H——一个被迫受困在人体之内的人工智能。《REPLACED》组合了电影叙事型平台游戏，像素艺术以及自由流畅的战斗。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/replaced",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_REPLACED_SadCatStudios_S1_2560x1440-48116926c33acd2a8e7e492bc0fdc7b2",
+      "developer": "Sad Cat Studios"
+    },
+    {
+      "rank": 26,
+      "title": "《Worlds Of The Future》",
+      "tags": [
+        "Space Sim",
+        "Open World",
+        "Adventure"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "《Worlds Of The Future》是一款科幻开放世界动作冒险游戏。探索充满着精彩历险、非凡传奇和各类角色的广阔太阳系。打造你的星际物流公司并争取榜上有名，成为众多世界中的传奇！",
+      "store_url": "https://store.epicgames.com/zh-CN/p/worlds-of-the-future",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/223c9a4a-d759-4a62-9b83-701d006a1909_2560x1440-c2003e23ef45b39a09a9a0e0277e0267",
+      "developer": "Moonmen Games"
+    },
+    {
+      "rank": 27,
+      "title": "《Esse Proxy》",
+      "tags": [
+        "Action",
+        "Adventure",
+        "Indie"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "一款残酷的俯视角双摇杆射击游戏，带给你酷炫流畅的游玩体验。杀戮或是灭亡。从哪里跌倒就从哪里爬起来，直到在这座反乌托邦赛博朋克城市中解开《Esse Proxy》的秘密。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/esse-proxy",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_EsseProxy_FromSouthGames_S1_2560x1440-bb28f20ebe7c41f456e0661897070403",
+      "developer": "From South Games"
+    },
+    {
+      "rank": 28,
+      "title": "《Spacelines from the Far Out》",
+      "tags": [
+        "Co-op",
+        "Multiplayer",
+        "Party",
+        "Rogue-Lite"
+      ],
+      "price": "¥69.00",
+      "rating": null,
+      "description": "仅在星系内驾驶你的飞船已经足够困难，现在你还要让这些狂野的外星旅客称心如意，事情就更离谱了。和你的朋友们一起在线游玩，在来自 Coffeenauts 开发团队的疯狂多变的合作冒险中，担任船员的职责。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/spacelines-from-the-far-out",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/offer/dd03e221bdd24f12a95aba54cbe5d757/EGS_SpacelinesfromtheFarOut_Coffeenauts_S1_2560x1440-af4e0cd82ee60e66db9b3f3ca86f92af",
+      "developer": "Coffeenauts"
+    },
+    {
+      "rank": 29,
+      "title": "《超级巴基球》",
+      "tags": [
+        "Action",
+        "Co-op",
+        "Multiplayer"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "《超级巴基球》是一款赛博朋克风格动作体育游戏，你将从具有各自超能力的十余位独一无二的英雄中选择其一，在激烈的在线或单人模式中进行休闲或竞技比赛。",
+      "store_url": "https://store.epicgames.com/zh-CN/p/super-buckyball-tournament",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_SuperBuckyballTournament_PatheaGames_S1_2560x1440-4f18fd46c296f84578c372026a3e014c",
+      "developer": "PatheaGames"
+    },
+    {
+      "rank": 30,
+      "title": "《Yakuza Empire》",
+      "tags": [
+        "Base-Building",
+        "Turn-Based"
+      ],
+      "price": "免费",
+      "rating": null,
+      "description": "残忍、野心、决心——如果你想在无情的黑社会中实现你的目标，这些素质你必须具备。这就是《Yakuza Empire》，一款有关日本职业黑帮的战略/管理游戏。你是否已经准备好了挑战这个领域?",
+      "store_url": "https://store.epicgames.com/zh-CN/p/yakuza-empire",
+      "platform": "Epic",
+      "cover_image": "https://cdn1.epicgames.com/salesEvent/salesEvent/EGS_YakuzaEmpire_RockGameSA_S1_2560x1440-950060d38905e088f1bdb848b9908750",
+      "developer": "RockGame S.A."
+    }
+  ]
+}

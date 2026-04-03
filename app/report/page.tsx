@@ -107,6 +107,19 @@ function ExternalStoreLink({
   );
 }
 
+function normalizeCoverUrl(input: string | null | undefined): string | null {
+  const raw = input?.trim();
+  if (!raw) return null;
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (raw.startsWith("http://")) return `https://${raw.slice("http://".length)}`;
+  // TapTap 等站点偶尔会把图片后面再拼一段路径（形如 *.jpg/_tap_banner.jpg），会导致 404
+  const m = raw.match(/^(https?:\/\/.+?\.(?:png|jpe?g|webp|gif))(?:[/?#].*)?$/i);
+  if (m) return m[1]!;
+  const m2 = raw.match(/^(https?:\/\/.+?\.(?:png|jpe?g|webp|gif))\/.+$/i);
+  if (m2) return m2[1]!;
+  return raw;
+}
+
 /** 与 Steam 榜单行一致的布局：排名 + 封面位 + 标题链接 + 副标题 + 右侧价格区 */
 function ChartListRow({
   rank,
@@ -125,12 +138,14 @@ function ChartListRow({
   priceMain: ReactNode;
   priceExtra?: ReactNode;
 }) {
-  const thumb = coverUrl?.trim() ? (
+  const cover = normalizeCoverUrl(coverUrl);
+  const thumb = cover ? (
     <img
-      src={coverUrl.trim()}
+      src={cover}
       alt={title}
       className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
       loading="lazy"
+      referrerPolicy="no-referrer"
     />
   ) : (
     <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" aria-hidden />
@@ -254,6 +269,11 @@ export default async function ReportPage() {
         }
       : null;
 
+  /** 与 `tryCreateSupabaseServiceClient` 一致：缺任一项则服务端不会查库，榜单会全部「暂无数据」 */
+  const supabaseServerConfigured =
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+
   // ===== 国内 PC 保有量（年）口径：按家庭户数推算（家用电脑在用量估算）=====
   // 口径：家庭户数 ×（每百户拥有计算机台数 / 100）
   // 来源：统计年鉴 2025（披露到 2024 年末）
@@ -309,6 +329,19 @@ export default async function ReportPage() {
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-900">
       <main className="mx-auto max-w-6xl px-6 py-12">
+        {!supabaseServerConfigured ? (
+          <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p className="font-medium">未连接 Supabase（服务端读库未配置）</p>
+            <p className="mt-1 text-amber-900/90">
+              在 <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">pc-game-weekly/.env.local</code> 填写{" "}
+              <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_URL</code> 与{" "}
+              <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">SUPABASE_SERVICE_ROLE_KEY</code>
+              （Dashboard 里 <span className="whitespace-nowrap">Project Settings → API</span> 的{" "}
+              <span className="font-medium">service_role</span>，不要用 anon 代替）。保存后务必重启{" "}
+              <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">npm run dev</code>。
+            </p>
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-xs font-medium text-zinc-600">综合周报（自动生成）</p>

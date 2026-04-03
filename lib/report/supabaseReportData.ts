@@ -1,6 +1,7 @@
 import { tryCreateSupabaseServiceClient } from "@/lib/supabase/server";
 import type { SteamAppBrief } from "@/lib/steam/appDetails";
 import type { EpicChartGame, TapGame, WgGame } from "@/lib/report/localLists";
+import { unstable_cache } from "next/cache";
 
 export type Row = Record<string, unknown>;
 
@@ -138,6 +139,55 @@ async function fetchAllRows(table: string, limit = 800): Promise<Row[]> {
   }
 }
 
+type KnownTable =
+  | "steam_weekly_topsellers"
+  | "steam_upcoming_popular"
+  | "steam_monthly_top_new"
+  | "steam_updates_summary"
+  | "data_4399_summary"
+  | "epic_top_sellers"
+  | "epic_most_played"
+  | "wegame_bestseller"
+  | "wegame_purchase"
+  | "wegame_follow"
+  | "taptap_hot_download"
+  | "taptap_test_hot";
+
+const BASE_TIME_COLS =
+  "fetched_at,updated_at,created_at,ingested_at,snapshot_at,batch_at,period_start,fetch_date,generated_at,period_label,week_label,chart_name,source";
+
+const SELECT_COLS: Record<KnownTable, string> = {
+  steam_weekly_topsellers: `${BASE_TIME_COLS},rank,position,appid,app_id,steam_appid,name,title,game_name,price_text,price,final_price,current_price,price_cny,current_price_cny,discount_percent,discount,discount_pct,genres,tags,game_genres,rank_delta,rank_change,last_week_rank,prev_rank,is_new,is_new_entry,new_entry,entry_type,badge,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
+  steam_upcoming_popular: `${BASE_TIME_COLS},rank,position,appid,app_id,steam_appid,name,title,game_name,release_date,release_date_text,coming_date,followers,wishlist_count,follows,genres,tags,game_genres,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
+  steam_monthly_top_new: `${BASE_TIME_COLS},rank,position,idx,tier,level,badge,category,appid,app_id,steam_appid,name,title,game_name,price_text,price,discount_percent,discount,genres,tags,game_genres,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
+  steam_updates_summary: `${BASE_TIME_COLS},title,heading,name,period_label,body,content,summary,text,markdown,description,digest,source_url,url,link,payload`,
+  data_4399_summary: `${BASE_TIME_COLS},title,heading,name,period_label,body,content,summary,text,markdown,description,digest,source_url,url,link,payload`,
+  epic_top_sellers: `${BASE_TIME_COLS},rank,position,name,title,game_name,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
+  epic_most_played: `${BASE_TIME_COLS},rank,position,name,title,game_name,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
+  wegame_bestseller: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
+  wegame_purchase: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
+  wegame_follow: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
+  taptap_hot_download: `${BASE_TIME_COLS},rank,position,title,name,game_name,rating,score,tags,genres,game_genres,price,price_text,description,desc,store_url,url,link,test_status,status,phase,cover_image,header_image,image_url,thumbnail,thumb`,
+  taptap_test_hot: `${BASE_TIME_COLS},rank,position,title,name,game_name,rating,score,tags,genres,game_genres,price,price_text,description,desc,store_url,url,link,test_status,status,phase,cover_image,header_image,image_url,thumbnail,thumb`,
+};
+
+const fetchAllRowsCached = unstable_cache(
+  async (table: KnownTable, limit: number) => {
+    const supabase = tryCreateSupabaseServiceClient();
+    if (!supabase) return [];
+    try {
+      const cols = SELECT_COLS[table] ?? "*";
+      const { data, error } = await supabase.from(table).select(cols).limit(limit);
+      if (error || !data?.length) return [];
+      return data as unknown as Row[];
+    } catch {
+      return [];
+    }
+  },
+  ["supabase-report-rows-v1"],
+  { revalidate: 120 },
+);
+
 export type SteamWeeklyDbItem = {
   rank: number;
   appid: number | null;
@@ -189,7 +239,7 @@ export async function loadSteamWeeklyTopsellersFromSupabase(): Promise<{
   moversUp: SteamWeeklyDbItem[];
   moversDown: SteamWeeklyDbItem[];
 } | null> {
-  const raw = await fetchAllRows("steam_weekly_topsellers");
+  const raw = await fetchAllRowsCached("steam_weekly_topsellers", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const items = sortByRank(batch)
@@ -233,7 +283,7 @@ function rowToSteamUpcoming(r: Row): SteamUpcomingDbItem | null {
 }
 
 export async function loadSteamUpcomingPopularFromSupabase(): Promise<{ items: SteamUpcomingDbItem[] } | null> {
-  const raw = await fetchAllRows("steam_upcoming_popular");
+  const raw = await fetchAllRowsCached("steam_upcoming_popular", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const items = sortByRank(batch).map(rowToSteamUpcoming).filter((x): x is SteamUpcomingDbItem => x != null);
@@ -311,7 +361,7 @@ function mergeSteamBriefNew(item: SteamNewDbItem, b: SteamAppBrief | undefined):
 }
 
 export async function loadSteamMonthlyTopNewFromSupabase(): Promise<{ items: SteamNewDbItem[] } | null> {
-  const raw = await fetchAllRows("steam_monthly_top_new");
+  const raw = await fetchAllRowsCached("steam_monthly_top_new", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const items = sortByRank(batch).map(rowToSteamNew).filter((x): x is SteamNewDbItem => x != null);
@@ -383,7 +433,7 @@ function rowToSummary(r: Row): TextSummaryBlock | null {
 }
 
 export async function loadSteamUpdatesSummaryFromSupabase(): Promise<TextSummaryBlock | null> {
-  const raw = await fetchAllRows("steam_updates_summary", 200);
+  const raw = await fetchAllRowsCached("steam_updates_summary", 200);
   if (!raw.length) return null;
   const sorted = [...raw].sort((a, b) => {
     const ta = Date.parse(String(a.updated_at ?? a.created_at ?? 0));
@@ -394,7 +444,7 @@ export async function loadSteamUpdatesSummaryFromSupabase(): Promise<TextSummary
 }
 
 export async function load4399SummaryFromSupabase(): Promise<TextSummaryBlock | null> {
-  const raw = await fetchAllRows("data_4399_summary", 200);
+  const raw = await fetchAllRowsCached("data_4399_summary", 200);
   if (!raw.length) return null;
   const sorted = [...raw].sort((a, b) => {
     const ta = Date.parse(String(a.updated_at ?? a.created_at ?? 0));
@@ -422,7 +472,7 @@ function rowToEpicGame(r: Row): EpicChartGame | null {
 }
 
 export async function loadEpicTopSellersFromSupabase(): Promise<{ games: EpicChartGame[]; fetchDate: string | null } | null> {
-  const raw = await fetchAllRows("epic_top_sellers");
+  const raw = await fetchAllRowsCached("epic_top_sellers", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const games = sortByRank(batch).map(rowToEpicGame).filter((x): x is EpicChartGame => x != null);
@@ -432,7 +482,7 @@ export async function loadEpicTopSellersFromSupabase(): Promise<{ games: EpicCha
 }
 
 export async function loadEpicMostPlayedFromSupabase(): Promise<{ games: EpicChartGame[]; fetchDate: string | null } | null> {
-  const raw = await fetchAllRows("epic_most_played");
+  const raw = await fetchAllRowsCached("epic_most_played", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const games = sortByRank(batch).map(rowToEpicGame).filter((x): x is EpicChartGame => x != null);
@@ -461,7 +511,7 @@ export async function loadWeGameTableFromSupabase(table: "wegame_bestseller" | "
   games: WgGame[];
   generatedAt: string | null;
 } | null> {
-  const raw = await fetchAllRows(table);
+  const raw = await fetchAllRowsCached(table, 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const games = sortByRank(batch).map(rowToWg).filter((x): x is WgGame => x != null);
@@ -491,7 +541,7 @@ export async function loadTapTapTableFromSupabase(table: "taptap_hot_download" |
   games: TapGame[];
   generatedAt: string | null;
 } | null> {
-  const raw = await fetchAllRows(table);
+  const raw = await fetchAllRowsCached(table, 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const games = sortByRank(batch).map(rowToTap).filter((x): x is TapGame => x != null);

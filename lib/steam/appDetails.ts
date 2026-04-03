@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+
 export type SteamAppBrief = {
   appid: number;
   name: string | null;
@@ -33,6 +35,83 @@ function formatPriceFallback(finalPriceCent?: number, currency?: string) {
   return currency ? `${value} ${currency}` : value;
 }
 
+const fetchSteamAppBriefCached = unstable_cache(
+  async (appid: number, options: { cc?: string; l?: string }) => {
+    async function sleep(ms: number) {
+      await new Promise((r) => setTimeout(r, ms));
+    }
+
+    async function fetchAppDetailsPayload(params: { cc?: string; l?: string }) {
+      const endpoint = new URL("https://store.steampowered.com/api/appdetails");
+      endpoint.searchParams.set("appids", String(appid));
+      if (params.cc) endpoint.searchParams.set("cc", params.cc);
+      if (params.l) endpoint.searchParams.set("l", params.l);
+
+      const url = endpoint.toString();
+      const maxAttempts = 4;
+      let lastErr: unknown;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const resp = await fetch(url, {
+            cache: "no-store",
+            headers: { "user-agent": "pc-game-weekly-bot/1.0", accept: "application/json" },
+          });
+          if (resp.status === 429 || resp.status === 503 || resp.status === 502) {
+            await sleep(350 * attempt);
+            continue;
+          }
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const payload = (await resp.json()) as Record<string, SteamAppDetailsInner>;
+          return payload[String(appid)];
+        } catch (e) {
+          lastErr = e;
+          if (attempt < maxAttempts) await sleep(250 * attempt);
+        }
+      }
+      throw lastErr instanceof Error ? lastErr : new Error("fetch appdetails failed");
+    }
+
+    // Some apps return {success:false} under certain countries (e.g. CN store unavailable).
+    // We progressively fall back to less strict contexts to at least get name/image/genres.
+    const cc = options.cc ? options.cc.toUpperCase() : undefined;
+    const l = options.l;
+    const attempts = [{ cc, l }, { l }, {}] as Array<{ cc?: string; l?: string }>;
+
+    let item: SteamAppDetailsInner | undefined;
+    for (const params of attempts) {
+      const got = await fetchAppDetailsPayload(params);
+      if (got?.success) {
+        item = got;
+        break;
+      }
+    }
+    if (!item?.success) return null;
+
+    const data = item.data;
+    const isFree = data?.is_free === true;
+    const finalFormatted = data?.price_overview?.final_formatted ?? null;
+    const finalCent = data?.price_overview?.final;
+    const currency = data?.price_overview?.currency;
+
+    return {
+      appid,
+      name: data?.name ?? null,
+      priceText: isFree ? "免费开玩" : finalFormatted || formatPriceFallback(finalCent, currency),
+      discountPercent: typeof data?.price_overview?.discount_percent === "number" ? data.price_overview.discount_percent : null,
+      headerImage: data?.header_image ?? null,
+      genres: (data?.genres ?? [])
+        .map((g) => g.description?.trim())
+        .filter((v): v is string => Boolean(v))
+        .slice(0, 4),
+      developers: (data?.developers ?? []).filter((v): v is string => Boolean(v)).slice(0, 3),
+      publishers: (data?.publishers ?? []).filter((v): v is string => Boolean(v)).slice(0, 3),
+    } satisfies SteamAppBrief;
+  },
+  ["steam-app-brief-v1"],
+  // store 页面数据变动不需要实时；缓存 6 小时能显著提升刷新速度并降低限流风险
+  { revalidate: 60 * 60 * 6 },
+);
+
 export async function fetchSteamAppsBrief(
   appids: number[],
   options: { cc?: string; l?: string } = {},
@@ -50,82 +129,10 @@ export async function fetchSteamAppsBrief(
   const concurrency = 3;
   let cursor = 0;
 
-  async function sleep(ms: number) {
-    await new Promise((r) => setTimeout(r, ms));
-  }
-
-  async function fetchAppDetailsPayload(appid: number, params: { cc?: string; l?: string }) {
-    const endpoint = new URL("https://store.steampowered.com/api/appdetails");
-    endpoint.searchParams.set("appids", String(appid));
-    if (params.cc) endpoint.searchParams.set("cc", params.cc);
-    if (params.l) endpoint.searchParams.set("l", params.l);
-
-    const url = endpoint.toString();
-    const maxAttempts = 4;
-    let lastErr: unknown;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const resp = await fetch(url, {
-          cache: "no-store",
-          headers: { "user-agent": "pc-game-weekly-bot/1.0", accept: "application/json" },
-        });
-        if (resp.status === 429 || resp.status === 503 || resp.status === 502) {
-          await sleep(350 * attempt);
-          continue;
-        }
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const payload = (await resp.json()) as Record<string, SteamAppDetailsInner>;
-        return payload[String(appid)];
-      } catch (e) {
-        lastErr = e;
-        if (attempt < maxAttempts) await sleep(250 * attempt);
-      }
-    }
-    throw lastErr instanceof Error ? lastErr : new Error("fetch appdetails failed");
-  }
-
   async function fetchOne(appid: number) {
-    // Some apps return {success:false} under certain countries (e.g. CN store unavailable).
-    // We progressively fall back to less strict contexts to at least get name/image/genres.
-    const attempts = [
-      { cc, l },
-      { l },
-      {},
-    ] as Array<{ cc?: string; l?: string }>;
-
-    let item: SteamAppDetailsInner | undefined;
-    for (const params of attempts) {
-      const got = await fetchAppDetailsPayload(appid, params);
-      if (got?.success) {
-        item = got;
-        break;
-      }
-    }
-
-    if (!item?.success) throw new Error("Steam appdetails success=false");
-    const data = item?.data;
-
-    const isFree = data?.is_free === true;
-    const finalFormatted = data?.price_overview?.final_formatted ?? null;
-    const finalCent = data?.price_overview?.final;
-    const currency = data?.price_overview?.currency;
-
-    result.set(appid, {
-      appid,
-      name: data?.name ?? null,
-      priceText: isFree ? "免费开玩" : finalFormatted || formatPriceFallback(finalCent, currency),
-      discountPercent:
-        typeof data?.price_overview?.discount_percent === "number"
-          ? data.price_overview.discount_percent
-          : null,
-      headerImage: data?.header_image ?? null,
-      genres: (data?.genres ?? [])
-        .map((g) => g.description?.trim())
-        .filter((v): v is string => Boolean(v))
-        .slice(0, 4),
-      developers: (data?.developers ?? []).filter((v): v is string => Boolean(v)).slice(0, 3),
-      publishers: (data?.publishers ?? []).filter((v): v is string => Boolean(v)).slice(0, 3),
-    });
+    const brief = await fetchSteamAppBriefCached(appid, { cc, l });
+    if (!brief) throw new Error("Steam appdetails success=false");
+    result.set(appid, brief);
   }
 
   async function worker() {

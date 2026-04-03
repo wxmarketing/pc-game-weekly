@@ -177,9 +177,15 @@ const fetchAllRowsCached = unstable_cache(
     if (!supabase) return [];
     try {
       const cols = SELECT_COLS[table] ?? "*";
-      const { data, error } = await supabase.from(table).select(cols).limit(limit);
-      if (error || !data?.length) return [];
-      return data as unknown as Row[];
+      const first = await supabase.from(table).select(cols).limit(limit);
+      if (!first.error && first.data?.length) return first.data as unknown as Row[];
+      if (first.error) {
+        // 选了不存在的列时 PostgREST 会直接报错；线上必须兜底回退到 select("*") 以避免整页无数据
+        const fallback = await supabase.from(table).select("*").limit(limit);
+        if (!fallback.error && fallback.data?.length) return fallback.data as unknown as Row[];
+        return [];
+      }
+      return [];
     } catch {
       return [];
     }

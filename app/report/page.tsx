@@ -1,10 +1,25 @@
-import { buildSteamWeeklyTopSellersReport } from "@/lib/report/steamWeekly";
-import { buildSteamMostPlayedReport } from "@/lib/report/steamMostPlayed";
-import { loadSteamMdReport } from "@/lib/report/steamMd";
-import { loadEpicCharts, loadEpicUpcoming, loadTapTapList, loadWeGameList } from "@/lib/report/localLists";
 import { getLatestBrowserShare, getLatestPcShipmentsQuarterly, getLatestSearchEngineShare } from "@/lib/report/staticSeries";
+import {
+  attachSteamAppBriefToMonthlyNew,
+  attachSteamAppBriefToUpcoming,
+  attachSteamAppBriefToWeeklyReport,
+  load4399SummaryFromSupabase,
+  loadEpicMostPlayedFromSupabase,
+  loadEpicTopSellersFromSupabase,
+  loadSteamMonthlyTopNewFromSupabase,
+  loadSteamUpdatesSummaryFromSupabase,
+  loadSteamUpcomingPopularFromSupabase,
+  loadSteamWeeklyTopsellersFromSupabase,
+  loadTapTapTableFromSupabase,
+  loadWeGameTableFromSupabase,
+} from "@/lib/report/supabaseReportData";
+import { fetchSteamAppsBrief, type SteamAppBrief } from "@/lib/steam/appDetails";
 import { BrowserSharePie } from "./BrowserSharePie";
 import { SharePie } from "./SharePie";
+import type { ReactNode } from "react";
+
+/** 每次请求拉最新 Supabase 数据，避免静态化把空数据焊进 HTML */
+export const dynamic = "force-dynamic";
 
 function formatYmd(iso: string) {
   const d = new Date(iso);
@@ -13,6 +28,22 @@ function formatYmd(iso: string) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+/** 列表元数据、摘要「更新」等文案只展示本地日历日期 */
+function dateOnlyLabel(raw: string | null | undefined): string {
+  if (raw == null || String(raw).trim() === "") return "—";
+  const s = String(raw).trim();
+  const d = new Date(s);
+  if (Number.isFinite(d.getTime())) {
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${mo}-${day}`;
+  }
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1]!;
+  return s;
 }
 
 function Arrow({ delta }: { delta: number | null }) {
@@ -36,6 +67,119 @@ function Arrow({ delta }: { delta: number | null }) {
   );
 }
 
+function SteamAppLink({
+  appid,
+  className,
+  children,
+}: {
+  appid: number | null | undefined;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (!appid) return <span className={className}>{children}</span>;
+  return (
+    <a
+      className={className}
+      href={`https://store.steampowered.com/app/${appid}/`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {children}
+    </a>
+  );
+}
+
+function ExternalStoreLink({
+  href,
+  className,
+  children,
+}: {
+  href: string | null | undefined;
+  className?: string;
+  children: ReactNode;
+}) {
+  const u = href?.trim();
+  if (!u) return <span className={className}>{children}</span>;
+  return (
+    <a className={className} href={u} target="_blank" rel="noreferrer">
+      {children}
+    </a>
+  );
+}
+
+/** 与 Steam 榜单行一致的布局：排名 + 封面位 + 标题链接 + 副标题 + 右侧价格区 */
+function ChartListRow({
+  rank,
+  coverUrl,
+  title,
+  titleHref,
+  subtitle,
+  priceMain,
+  priceExtra,
+}: {
+  rank: number;
+  coverUrl?: string | null;
+  title: string;
+  titleHref?: string | null;
+  subtitle: string;
+  priceMain: ReactNode;
+  priceExtra?: ReactNode;
+}) {
+  const thumb = coverUrl?.trim() ? (
+    <img
+      src={coverUrl.trim()}
+      alt={title}
+      className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
+      loading="lazy"
+    />
+  ) : (
+    <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" aria-hidden />
+  );
+  const titleNode = (
+    <ExternalStoreLink href={titleHref} className="truncate text-[15px] font-semibold text-zinc-900 hover:underline">
+      {title}
+    </ExternalStoreLink>
+  );
+  const priceBlock = (
+    <div className="tabular-nums text-zinc-700">
+      <div className="text-sm font-semibold text-zinc-900">{priceMain}</div>
+      {priceExtra ? <div className="mt-1">{priceExtra}</div> : null}
+    </div>
+  );
+  return (
+    <div className="hover:bg-zinc-50/60">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:hidden">
+        <div className="flex items-start gap-3">
+          <div className="tabular-nums pt-0.5">
+            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
+              #{rank}
+            </span>
+          </div>
+          {thumb}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">{titleNode}</div>
+            <div className="mt-0.5 truncate text-[12px] text-zinc-500">{subtitle}</div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-3">{priceBlock}</div>
+      </div>
+      <div className="hidden sm:flex items-center gap-4 px-4 py-3">
+        <div className="tabular-nums">
+          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
+            #{rank}
+          </span>
+        </div>
+        {thumb}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">{titleNode}</div>
+          <div className="mt-0.5 truncate text-[12px] text-zinc-500">{subtitle}</div>
+        </div>
+        {priceBlock}
+      </div>
+    </div>
+  );
+}
+
 export default async function ReportPage() {
   let browserShare: Awaited<ReturnType<typeof getLatestBrowserShare>> = null;
   let pcShipments: Awaited<ReturnType<typeof getLatestPcShipmentsQuarterly>> = null;
@@ -49,39 +193,66 @@ export default async function ReportPage() {
   } catch {
     /* 已由 staticSeries 内部兜底；此处防止 Promise.all 因未捕获的 reject 打挂整页 */
   }
-  const report = await (async () => {
-    try {
-      return await buildSteamWeeklyTopSellersReport({ cc: "CN", days: 7, limit: 20 });
-    } catch {
-      return null;
-    }
-  })();
-
-  const mostPlayed = await (async () => {
-    try {
-      return await buildSteamMostPlayedReport({ cc: "CN", limit: 10 });
-    } catch {
-      return null;
-    }
-  })();
-
-  const steamMd = await (async () => {
-    try {
-      return await loadSteamMdReport({ cc: "CN" });
-    } catch {
-      return null;
-    }
-  })();
-
-  const [epicCharts, epicUpcoming, wgBestseller, wgPurchase, wgFollow, tapHot, tapTest] = await Promise.all([
-    loadEpicCharts(),
-    loadEpicUpcoming(),
-    loadWeGameList("bestseller"),
-    loadWeGameList("purchase"),
-    loadWeGameList("follow"),
-    loadTapTapList("hot_download"),
-    loadTapTapList("test_hot"),
+  const [
+    steamWeekly,
+    steamUpcoming,
+    steamMonthlyNew,
+    steamUpdatesSummary,
+    summary4399,
+    epicTop,
+    epicMostPlayed,
+    wgBestseller,
+    wgPurchase,
+    wgFollow,
+    tapHot,
+    tapTest,
+  ] = await Promise.all([
+    loadSteamWeeklyTopsellersFromSupabase(),
+    loadSteamUpcomingPopularFromSupabase(),
+    loadSteamMonthlyTopNewFromSupabase(),
+    loadSteamUpdatesSummaryFromSupabase(),
+    load4399SummaryFromSupabase(),
+    loadEpicTopSellersFromSupabase(),
+    loadEpicMostPlayedFromSupabase(),
+    loadWeGameTableFromSupabase("wegame_bestseller"),
+    loadWeGameTableFromSupabase("wegame_purchase"),
+    loadWeGameTableFromSupabase("wegame_follow"),
+    loadTapTapTableFromSupabase("taptap_hot_download"),
+    loadTapTapTableFromSupabase("taptap_test_hot"),
   ]);
+
+  const steamAppIds = new Set<number>();
+  for (const it of steamWeekly?.items ?? []) {
+    if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
+  }
+  for (const it of steamUpcoming?.items ?? []) {
+    if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
+  }
+  for (const it of steamMonthlyNew?.items ?? []) {
+    if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
+  }
+  let steamBriefMap = new Map<number, SteamAppBrief>();
+  if (steamAppIds.size > 0) {
+    try {
+      steamBriefMap = await fetchSteamAppsBrief([...steamAppIds], { cc: "CN", l: "schinese" });
+    } catch {
+      /* 限流/网络失败时仅用 Supabase 兜底 */
+    }
+  }
+  const steamWeeklyEnriched = steamWeekly ? attachSteamAppBriefToWeeklyReport(steamWeekly, steamBriefMap) : null;
+  const steamUpcomingEnriched = steamUpcoming ? attachSteamAppBriefToUpcoming(steamUpcoming, steamBriefMap) : null;
+  const steamMonthlyNewEnriched = steamMonthlyNew ? attachSteamAppBriefToMonthlyNew(steamMonthlyNew, steamBriefMap) : null;
+
+  const epicCharts =
+    epicTop || epicMostPlayed
+      ? {
+          meta: {
+            fetchDate: epicTop?.fetchDate ?? epicMostPlayed?.fetchDate ?? null,
+          },
+          topSellers: epicTop?.games ?? [],
+          mostPlayed: epicMostPlayed?.games ?? [],
+        }
+      : null;
 
   // ===== 国内 PC 保有量（年）口径：按家庭户数推算（家用电脑在用量估算）=====
   // 口径：家庭户数 ×（每百户拥有计算机台数 / 100）
@@ -142,15 +313,14 @@ export default async function ReportPage() {
           <div>
             <p className="text-xs font-medium text-zinc-600">综合周报（自动生成）</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">PC 行业周报</h1>
-            {report ? (
+            {steamWeeklyEnriched ? (
               <p className="mt-3 text-sm text-zinc-600">
-                窗口：近 {report.windowDays} 天；国家：{report.countryCode}；时间：
-                {new Date(report.startCapturedAt).toLocaleString()} ～{" "}
-                {new Date(report.endCapturedAt).toLocaleString()}
+                数据来自 Supabase 表 <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">steam_weekly_topsellers</code>
+                {steamWeeklyEnriched.meta.label ? ` · ${steamWeeklyEnriched.meta.label}` : ""}
               </p>
             ) : (
               <p className="mt-3 text-sm text-rose-700">
-                本周快照不足（至少需要 2 条快照）。先手动抓两次再来看。
+                暂无 Steam 每周畅销数据：请确认表中有数据，且含 rank / name（或 title）等列。
               </p>
             )}
           </div>
@@ -356,20 +526,20 @@ export default async function ReportPage() {
 
         <section className="mt-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 中国畅销</h2>
-            <span className="text-xs text-zinc-500">数据来自已入库快照；对比窗口与页眉说明一致</span>
+            <h2 className="text-lg font-semibold tracking-tight">Steam 每周畅销榜</h2>
+            <span className="text-xs text-zinc-500">数据来自 Supabase；同批次按 fetched_at / updated_at 等时间列自动取最新一批</span>
           </div>
-          {report ? (
+          {steamWeeklyEnriched ? (
             <div className="grid gap-6">
             <section>
               <div className="mb-3 flex items-end justify-between">
-                <h3 className="text-base font-semibold">本周 Top20（以最新快照为准）</h3>
-                <div className="text-xs text-zinc-500">箭头为“相对本周第一条快照”的变动</div>
+                <h3 className="text-base font-semibold">主榜</h3>
+                <div className="text-xs text-zinc-500">箭头为排名变化（若表中有 rank_delta / last_week_rank 等列）</div>
               </div>
               <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="divide-y divide-zinc-100">
-                  {report.top.map((it) => (
-                    <div key={it.rank} className="hover:bg-zinc-50/60">
+                  {steamWeeklyEnriched.items.slice(0, 20).map((it) => (
+                    <div key={`${it.rank}-${it.name ?? it.appid ?? ""}`} className="hover:bg-zinc-50/60">
                       <div className="flex flex-col gap-3 px-4 py-3 sm:hidden">
                         <div className="flex items-start gap-3">
                           <div className="tabular-nums pt-0.5">
@@ -381,7 +551,7 @@ export default async function ReportPage() {
                           {it.headerImage ? (
                             <img
                               src={it.headerImage}
-                              alt={it.name || `Steam Game ${it.appid}`}
+                              alt={it.name || `Steam Game ${it.appid ?? ""}`}
                               className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
                               loading="lazy"
                             />
@@ -390,9 +560,12 @@ export default async function ReportPage() {
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <div className="truncate text-[15px] font-semibold text-zinc-900">
-                                {it.name || `App ${it.appid}`}
-                              </div>
+                              <SteamAppLink
+                                appid={it.appid}
+                                className="truncate text-[15px] font-semibold text-zinc-900 hover:underline"
+                              >
+                                {it.name || (it.appid ? `App ${it.appid}` : "—")}
+                              </SteamAppLink>
                               {it.isNewEntry ? (
                                 <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                                   新上榜
@@ -413,14 +586,6 @@ export default async function ReportPage() {
                               </span>
                             ) : null}
                           </div>
-                          <a
-                            className="inline-flex shrink-0 rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                            href={`https://store.steampowered.com/app/${it.appid}/`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            商店页
-                          </a>
                         </div>
                       </div>
 
@@ -434,7 +599,7 @@ export default async function ReportPage() {
                         {it.headerImage ? (
                           <img
                             src={it.headerImage}
-                            alt={it.name || `Steam Game ${it.appid}`}
+                            alt={it.name || `Steam Game ${it.appid ?? ""}`}
                             className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
                             loading="lazy"
                           />
@@ -443,9 +608,12 @@ export default async function ReportPage() {
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <div className="truncate text-[15px] font-semibold text-zinc-900">
-                              {it.name || `App ${it.appid}`}
-                            </div>
+                            <SteamAppLink
+                              appid={it.appid}
+                              className="truncate text-[15px] font-semibold text-zinc-900 hover:underline"
+                            >
+                              {it.name || (it.appid ? `App ${it.appid}` : "—")}
+                            </SteamAppLink>
                             {it.isNewEntry ? (
                               <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                                 新上榜
@@ -464,14 +632,6 @@ export default async function ReportPage() {
                             </span>
                           ) : null}
                         </div>
-                        <a
-                          className="inline-flex shrink-0 rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                          href={`https://store.steampowered.com/app/${it.appid}/`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          商店页
-                        </a>
                       </div>
                     </div>
                   ))}
@@ -483,13 +643,15 @@ export default async function ReportPage() {
               <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <h3 className="text-base font-semibold">本周新上榜</h3>
                 <div className="mt-3 space-y-2">
-                  {report.newEntries.length === 0 ? (
-                    <div className="text-sm text-zinc-500">本周 Top20 没有新上榜。</div>
+                  {steamWeeklyEnriched.newEntries.length === 0 ? (
+                    <div className="text-sm text-zinc-500">当前批次没有标记为新上榜的条目。</div>
                   ) : (
-                    report.newEntries.slice(0, 10).map((it) => (
-                      <div key={it.appid} className="flex items-center justify-between gap-3">
+                    steamWeeklyEnriched.newEntries.slice(0, 10).map((it) => (
+                      <div key={it.appid ?? it.rank} className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{it.name || `App ${it.appid}`}</div>
+                          <SteamAppLink appid={it.appid} className="truncate text-sm font-medium hover:underline">
+                            {it.name || `App ${it.appid}`}
+                          </SteamAppLink>
                           <div className="truncate text-xs text-zinc-500">
                             {it.genres.length ? it.genres.join(" · ") : "类型未知"}
                           </div>
@@ -505,16 +667,16 @@ export default async function ReportPage() {
                 <h3 className="text-base font-semibold">本周涨跌幅最大</h3>
                 <div className="mt-3 grid gap-4">
                   <div>
-                    <div className="text-xs font-medium text-zinc-500">上升 Top5</div>
+                    <div className="text-xs font-medium text-zinc-500">上升</div>
                     <div className="mt-2 space-y-2">
-                      {report.moversUp.length === 0 ? (
+                      {steamWeeklyEnriched.moversUp.length === 0 ? (
                         <div className="text-sm text-zinc-500">暂无。</div>
                       ) : (
-                        report.moversUp.map((it) => (
-                          <div key={it.appid} className="flex items-center justify-between gap-3">
-                            <div className="min-w-0 truncate text-sm font-medium">
+                        steamWeeklyEnriched.moversUp.map((it) => (
+                          <div key={it.appid ?? it.rank} className="flex items-center justify-between gap-3">
+                            <SteamAppLink appid={it.appid} className="min-w-0 truncate text-sm font-medium hover:underline">
                               {it.name || `App ${it.appid}`}
-                            </div>
+                            </SteamAppLink>
                             <div className="shrink-0 text-xs font-semibold text-emerald-700">
                               ↑{it.rankDelta}
                             </div>
@@ -524,16 +686,16 @@ export default async function ReportPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-zinc-500">下降 Top5</div>
+                    <div className="text-xs font-medium text-zinc-500">下降</div>
                     <div className="mt-2 space-y-2">
-                      {report.moversDown.length === 0 ? (
+                      {steamWeeklyEnriched.moversDown.length === 0 ? (
                         <div className="text-sm text-zinc-500">暂无。</div>
                       ) : (
-                        report.moversDown.map((it) => (
-                          <div key={it.appid} className="flex items-center justify-between gap-3">
-                            <div className="min-w-0 truncate text-sm font-medium">
+                        steamWeeklyEnriched.moversDown.map((it) => (
+                          <div key={it.appid ?? it.rank} className="flex items-center justify-between gap-3">
+                            <SteamAppLink appid={it.appid} className="min-w-0 truncate text-sm font-medium hover:underline">
                               {it.name || `App ${it.appid}`}
-                            </div>
+                            </SteamAppLink>
                             <div className="shrink-0 text-xs font-semibold text-rose-700">
                               ↓{Math.abs(it.rankDelta ?? 0)}
                             </div>
@@ -548,77 +710,51 @@ export default async function ReportPage() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              <p className="font-medium text-zinc-800">本窗口内可用于对比的 Steam 快照不足</p>
-              <p className="mt-2">至少需要 2 条「中国区 Top Sellers」快照才能计算排名变化、新上榜与涨跌榜。可由 Vercel Cron 每日抓取，或手动请求 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">/api/cron/steam/top-sellers</code>（需配置 Cron Secret）。</p>
-              {steamMd?.topSellers?.length ? (
-                <div className="mt-6 text-left">
-                  <div className="mb-2 text-xs font-medium text-zinc-500">兜底数据：来自 `data/PC游戏行业周报_20260401.md`</div>
-                  <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                    <div className="divide-y divide-zinc-100">
-                      {steamMd.topSellers.slice(0, 20).map((it) => (
-                        <div key={it.rank} className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-50/60">
-                          <div className="tabular-nums">
-                            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-                              #{it.rank}
-                            </span>
-                          </div>
-                          {it.headerImage ? (
-                            <img
-                              src={it.headerImage}
-                              alt={it.name}
-                              className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-[15px] font-semibold text-zinc-900">{it.name}</div>
-                            <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                              {it.genres.length ? it.genres.join(" · ") : "类型未知"}
-                            </div>
-                          </div>
-                          <div className="shrink-0 text-right tabular-nums text-xs text-zinc-600">
-                              <div className="text-sm font-semibold text-zinc-900">{it.priceText || "-"}</div>
-                              {typeof it.discountPercent === "number" && it.discountPercent > 0 ? (
-                                <span className="mt-1 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                                  -{it.discountPercent}%
-                                </span>
-                              ) : null}
-                            <div className="mt-0.5 text-[11px] text-zinc-500">
-                              变化：{it.rankChangeText} · 周数：{it.weeksOnChart ?? "—"}
-                            </div>
-                          </div>
-                          {it.appid ? (
-                            <a
-                              className="inline-flex shrink-0 rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                              href={`https://store.steampowered.com/app/${it.appid}/`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              商店页
-                            </a>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
+              <p className="font-medium text-zinc-800">暂无数据</p>
+              <p className="mt-2">请向 Supabase 表 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">steam_weekly_topsellers</code> 写入榜单行（至少含 rank 与 name/title）。若有多批次，建议带 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">fetched_at</code> 或 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">updated_at</code> 以便取最新一批。</p>
             </div>
           )}
         </section>
 
         <section className="mt-10">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 热门即将推出（数据）</h2>
-            <p className="mt-1 text-xs text-zinc-500">仅展示数据（来自本地 MD；可用时会补齐封面/类型）。</p>
+            <h2 className="text-lg font-semibold tracking-tight">Steam 平台动态摘要</h2>
+            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">steam_updates_summary</code>（取最新一条）</p>
           </div>
-          {steamMd?.upcoming?.length ? (
+          {steamUpdatesSummary ? (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              {steamUpdatesSummary.title ? (
+                <h3 className="text-base font-semibold text-zinc-900">{steamUpdatesSummary.title}</h3>
+              ) : null}
+              {steamUpdatesSummary.updatedAt ? (
+                <p className="mt-1 text-xs text-zinc-500">更新：{dateOnlyLabel(steamUpdatesSummary.updatedAt)}</p>
+              ) : null}
+              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-700">
+                {steamUpdatesSummary.body}
+              </pre>
+              {steamUpdatesSummary.extra ? (
+                <a className="mt-3 inline-block text-xs text-blue-600 hover:underline" href={steamUpdatesSummary.extra} target="_blank" rel="noreferrer">
+                  相关链接
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
+              暂无数据。
+            </div>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold tracking-tight">Steam 即将推出热门</h2>
+            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">steam_upcoming_popular</code></p>
+          </div>
+          {steamUpcomingEnriched?.items?.length ? (
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <div className="divide-y divide-zinc-100">
-                {steamMd.upcoming.slice(0, 20).map((it) => (
-                  <div key={it.rank} className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-50/60">
+                {steamUpcomingEnriched.items.slice(0, 20).map((it) => (
+                  <div key={`${it.rank}-${it.name}`} className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-50/60">
                     <div className="tabular-nums">
                       <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
                         #{it.rank}
@@ -635,7 +771,9 @@ export default async function ReportPage() {
                       <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] font-semibold text-zinc-900">{it.name}</div>
+                      <SteamAppLink appid={it.appid} className="truncate text-[15px] font-semibold text-zinc-900 hover:underline">
+                        {it.name}
+                      </SteamAppLink>
                       <div className="mt-0.5 truncate text-[12px] text-zinc-500">
                         {it.genres.length ? it.genres.join(" · ") : "类型未知"}
                       </div>
@@ -644,16 +782,6 @@ export default async function ReportPage() {
                       <div>发售日：<span className="font-semibold text-zinc-900">{it.releaseDateText || "—"}</span></div>
                       <div className="mt-0.5">Followers：<span className="font-semibold text-zinc-900">{typeof it.followers === "number" ? it.followers.toLocaleString() : "—"}</span></div>
                     </div>
-                    {it.appid ? (
-                      <a
-                        className="inline-flex shrink-0 rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                        href={`https://store.steampowered.com/app/${it.appid}/`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        商店页
-                      </a>
-                    ) : null}
                   </div>
                 ))}
               </div>
@@ -667,14 +795,16 @@ export default async function ReportPage() {
 
         <section className="mt-10">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 当月热门新品（数据）</h2>
-            <p className="mt-1 text-xs text-zinc-500">仅展示数据（来自本地 MD；分黄金/白银）。</p>
+            <h2 className="text-lg font-semibold tracking-tight">Steam 月度新品热门</h2>
+            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">steam_monthly_top_new</code>；tier 列含 gold/silver 时分组展示</p>
           </div>
-          {steamMd?.newReleases?.length ? (
+          {steamMonthlyNewEnriched?.items?.length ? (
             <div className="grid gap-6 sm:grid-cols-2">
-              {(["gold", "silver"] as const).map((tier) => {
-                const title = tier === "gold" ? "黄金级" : "白银级";
-                const list = steamMd.newReleases.filter((x) => x.tier === tier);
+              {(["gold", "silver", "other"] as const)
+                .filter((tier) => steamMonthlyNewEnriched.items.some((x) => x.tier === tier))
+                .map((tier) => {
+                const title = tier === "gold" ? "黄金级" : tier === "silver" ? "白银级" : "其他";
+                const list = steamMonthlyNewEnriched.items.filter((x) => x.tier === tier);
                 return (
                   <div key={tier} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
                     <h3 className="text-base font-semibold">{title}</h3>
@@ -693,7 +823,9 @@ export default async function ReportPage() {
                               <div className="h-12 w-[92px] rounded-md border border-zinc-200 bg-zinc-100" />
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-semibold text-zinc-900">{it.name}</div>
+                              <SteamAppLink appid={it.appid} className="truncate text-sm font-semibold text-zinc-900 hover:underline">
+                                {it.name}
+                              </SteamAppLink>
                               <div className="mt-0.5 truncate text-[12px] text-zinc-500">
                                 {it.genres.length ? it.genres.join(" · ") : "类型未知"}
                               </div>
@@ -706,16 +838,6 @@ export default async function ReportPage() {
                                 </span>
                               ) : null}
                             </div>
-                            {it.appid ? (
-                              <a
-                                className="inline-flex shrink-0 rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                                href={`https://store.steampowered.com/app/${it.appid}/`}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                商店页
-                              </a>
-                            ) : null}
                           </div>
                         ))}
                       </div>
@@ -732,181 +854,87 @@ export default async function ReportPage() {
         </section>
 
         <section className="mt-10">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 最热玩（API）</h2>
-            <p className="mt-1 text-xs text-zinc-500">数据来自 Steam Web API（Most Played Games）；仅展示 Top10。</p>
-          </div>
-          {mostPlayed ? (
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-              <div className="divide-y divide-zinc-100">
-                {mostPlayed.top.map((it) => (
-                  <div key={it.appid} className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-50/60">
-                    <div className="tabular-nums">
-                      <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-                        #{it.rank}
-                      </span>
-                    </div>
-                    {it.headerImage ? (
-                      <img
-                        src={it.headerImage}
-                        alt={it.name || `Steam Game ${it.appid}`}
-                        className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] font-semibold text-zinc-900">
-                        {it.name || `App ${it.appid}`}
-                      </div>
-                      <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                        {it.genres.length ? it.genres.join(" · ") : "类型未知"}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right tabular-nums text-xs text-zinc-600">
-                      <div className="mt-0.5">
-                        当日在线峰值：{" "}
-                        <span className="font-semibold text-zinc-900">
-                          {typeof it.peakInGame === "number" ? it.peakInGame.toLocaleString() : "—"}
-                        </span>
-                      </div>
-                    </div>
-                    <a
-                      className="inline-flex shrink-0 rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                      href={`https://store.steampowered.com/app/${it.appid}/`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      商店页
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              <p className="font-medium text-zinc-800">未配置 Steam Web API key 或 API 暂不可用</p>
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">Epic Games Store</h2>
-            <span className="text-xs text-zinc-500">数据来自本地 JSON（egdata.app / GraphQL 抓取结果）</span>
+            <span className="text-xs text-zinc-500">数据来自 Supabase：<code className="rounded bg-zinc-100 px-1">epic_top_sellers</code> / <code className="rounded bg-zinc-100 px-1">epic_most_played</code></span>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="flex items-end justify-between gap-3">
-                <h3 className="text-base font-semibold">最畅销 Top10（数据）</h3>
-                <span className="text-xs text-zinc-500">{epicCharts?.meta.fetchDate ?? "—"}</span>
+            <div>
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <h3 className="text-base font-semibold">最畅销</h3>
+                <span className="text-xs text-zinc-500">{dateOnlyLabel(epicTop?.fetchDate)}</span>
               </div>
-              <div className="mt-3 space-y-2">
-                {epicCharts?.topSellers?.length ? (
-                  epicCharts.topSellers.slice(0, 10).map((g) => (
-                    <div key={g.rank} className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-zinc-900">
-                          <span className="mr-2 tabular-nums text-zinc-500">#{g.rank}</span>
-                          {g.name}
-                        </div>
-                        <div className="mt-0.5 truncate text-xs text-zinc-500">
-                          USD：{g.current_price_usd == null ? "—" : g.current_price_usd.toFixed(2)}
-                          {g.original_price_usd != null ? `（原价 ${g.original_price_usd.toFixed(2)}）` : ""} · 折扣：
-                          {g.discount_percent == null ? "—" : `-${g.discount_percent}%`} · 在榜周数：
-                          {g.weeks_on_chart ?? "—"}
-                        </div>
-                      </div>
-                      {g.epic_store_url ? (
-                        <a
-                          className="shrink-0 text-xs text-blue-600 hover:underline"
-                          href={g.epic_store_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          打开
-                        </a>
-                      ) : null}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-zinc-500">暂无数据。</div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="flex items-end justify-between gap-3">
-                <h3 className="text-base font-semibold">最多人游玩 Top10（数据）</h3>
-                <span className="text-xs text-zinc-500">{epicCharts?.meta.fetchDate ?? "—"}</span>
-              </div>
-              <div className="mt-3 space-y-2">
-                {epicCharts?.mostPlayed?.length ? (
-                  epicCharts.mostPlayed.slice(0, 10).map((g) => (
-                    <div key={g.rank} className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-zinc-900">
-                          <span className="mr-2 tabular-nums text-zinc-500">#{g.rank}</span>
-                          {g.name}
-                        </div>
-                        <div className="mt-0.5 truncate text-xs text-zinc-500">
-                          是否免费：{g.is_free == null ? "—" : g.is_free ? "是" : "否"} · 在榜周数：
-                          {g.weeks_on_chart ?? "—"}
-                        </div>
-                      </div>
-                      {g.epic_store_url ? (
-                        <a
-                          className="shrink-0 text-xs text-blue-600 hover:underline"
-                          href={g.epic_store_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          打开
-                        </a>
-                      ) : null}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-zinc-500">暂无数据。</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="flex items-end justify-between gap-3">
-              <h3 className="text-base font-semibold">即将推出 Top30（数据）</h3>
-              <span className="text-xs text-zinc-500">{epicUpcoming?.meta.generatedAt ?? "—"}</span>
-            </div>
-            <div className="mt-3 overflow-hidden rounded-xl border border-zinc-100">
-              {epicUpcoming?.games?.length ? (
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="divide-y divide-zinc-100">
-                  {epicUpcoming.games.slice(0, 30).map((g) => (
-                    <div key={g.rank} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-zinc-900">
-                          <span className="mr-2 tabular-nums text-zinc-500">#{g.rank}</span>
-                          {g.title}
-                        </div>
-                        <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-zinc-500">
-                          <span>价格：{g.price ?? "—"}</span>
-                          {g.developer ? <span>开发商：{g.developer}</span> : null}
-                          {g.tags.length ? <span className="truncate">标签：{g.tags.slice(0, 6).join(" · ")}</span> : null}
-                        </div>
-                      </div>
-                      {g.store_url ? (
-                        <a className="shrink-0 text-xs text-blue-600 hover:underline" href={g.store_url} target="_blank" rel="noreferrer">
-                          打开
-                        </a>
-                      ) : null}
-                    </div>
-                  ))}
+                  {epicCharts?.topSellers?.length ? (
+                    epicCharts.topSellers.slice(0, 10).map((g) => {
+                      const sub: string[] = [];
+                      if (g.original_price_usd != null) sub.push(`原价 USD ${g.original_price_usd.toFixed(2)}`);
+                      if (g.weeks_on_chart != null) sub.push(`在榜 ${g.weeks_on_chart} 周`);
+                      const subtitle = sub.length ? sub.join(" · ") : "—";
+                      const priceMain =
+                        g.is_free === true
+                          ? "免费开玩"
+                          : g.current_price_usd != null
+                            ? `USD ${g.current_price_usd.toFixed(2)}`
+                            : "—";
+                      const priceExtra =
+                        typeof g.discount_percent === "number" && g.discount_percent > 0 ? (
+                          <span className="inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+                            -{g.discount_percent}%
+                          </span>
+                        ) : undefined;
+                      return (
+                        <ChartListRow
+                          key={`epic-top-${g.rank}`}
+                          rank={g.rank}
+                          coverUrl={g.cover_image}
+                          title={g.name}
+                          titleHref={g.epic_store_url}
+                          subtitle={subtitle}
+                          priceMain={priceMain}
+                          priceExtra={priceExtra}
+                        />
+                      );
+                    })
+                  ) : (
+                    <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
+                  )}
                 </div>
-              ) : (
-                <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
-              )}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <h3 className="text-base font-semibold">最多人游玩</h3>
+                <span className="text-xs text-zinc-500">{dateOnlyLabel(epicMostPlayed?.fetchDate)}</span>
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <div className="divide-y divide-zinc-100">
+                  {epicCharts?.mostPlayed?.length ? (
+                    epicCharts.mostPlayed.slice(0, 10).map((g) => {
+                      const parts: string[] = [];
+                      if (g.is_free != null) parts.push(g.is_free ? "免费开玩" : "付费");
+                      if (g.weeks_on_chart != null) parts.push(`在榜 ${g.weeks_on_chart} 周`);
+                      const subtitle = parts.length ? parts.join(" · ") : "—";
+                      return (
+                        <ChartListRow
+                          key={`epic-mp-${g.rank}`}
+                          rank={g.rank}
+                          coverUrl={g.cover_image}
+                          title={g.name}
+                          titleHref={g.epic_store_url}
+                          subtitle={subtitle}
+                          priceMain="—"
+                        />
+                      );
+                    })
+                  ) : (
+                    <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -914,43 +942,47 @@ export default async function ReportPage() {
         <section className="mt-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">WeGame</h2>
-            <span className="text-xs text-zinc-500">数据来自本地 JSON（DOM 解析抓取结果）</span>
+            <span className="text-xs text-zinc-500">数据来自 Supabase：<code className="rounded bg-zinc-100 px-1">wegame_bestseller</code> / <code className="rounded bg-zinc-100 px-1">wegame_purchase</code> / <code className="rounded bg-zinc-100 px-1">wegame_follow</code></span>
           </div>
           <div className="grid gap-6 lg:grid-cols-3">
             {[
-              { title: "火爆新品 Top15（数据）", data: wgBestseller },
-              { title: "本周热销 Top15（数据）", data: wgPurchase },
-              { title: "新游预约 Top15（数据）", data: wgFollow },
+              { title: "火爆新品", table: "wegame_bestseller" as const, pack: wgBestseller },
+              { title: "本周热销", table: "wegame_purchase" as const, pack: wgPurchase },
+              { title: "新游预约", table: "wegame_follow" as const, pack: wgFollow },
             ].map((x) => (
-              <div key={x.title} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <div className="flex items-end justify-between gap-3">
+              <div key={x.table}>
+                <div className="mb-3 flex items-end justify-between gap-3">
                   <h3 className="text-base font-semibold">{x.title}</h3>
-                  <span className="text-xs text-zinc-500">{x.data?.meta.generatedAt ?? "—"}</span>
+                  <span className="text-xs text-zinc-500">{dateOnlyLabel(x.pack?.generatedAt)}</span>
                 </div>
-                <div className="mt-3 space-y-2">
-                  {x.data?.games?.length ? (
-                    x.data.games.slice(0, 15).map((g) => (
-                      <div key={g.rank} className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-zinc-900">
-                            <span className="mr-2 tabular-nums text-zinc-500">#{g.rank}</span>
-                            {g.title}
-                          </div>
-                          <div className="mt-0.5 truncate text-xs text-zinc-500">
-                            {g.tags.length ? `标签：${g.tags.slice(0, 5).join(" · ")}` : "标签：—"} · 价格：{g.price ?? "—"}
-                            {typeof g.weekly_follows === "number" ? ` · 本周预约：${g.weekly_follows.toLocaleString()}` : ""}
-                          </div>
-                        </div>
-                        {g.store_url ? (
-                          <a className="shrink-0 text-xs text-blue-600 hover:underline" href={g.store_url} target="_blank" rel="noreferrer">
-                            打开
-                          </a>
-                        ) : null}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-zinc-500">暂无数据。</div>
-                  )}
+                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                  <div className="divide-y divide-zinc-100">
+                    {x.pack?.games?.length ? (
+                      x.pack.games.slice(0, 15).map((g) => {
+                        const subtitle = g.tags.length ? g.tags.slice(0, 5).join(" · ") : "标签未知";
+                        const priceExtra =
+                          typeof g.weekly_follows === "number" ? (
+                            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                              本周预约 {g.weekly_follows.toLocaleString()}
+                            </span>
+                          ) : undefined;
+                        return (
+                          <ChartListRow
+                            key={`${x.table}-${g.rank}`}
+                            rank={g.rank}
+                            coverUrl={g.cover_image}
+                            title={g.title}
+                            titleHref={g.store_url}
+                            subtitle={subtitle}
+                            priceMain={g.price ?? "—"}
+                            priceExtra={priceExtra}
+                          />
+                        );
+                      })
+                    ) : (
+                      <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -960,47 +992,74 @@ export default async function ReportPage() {
         <section className="mt-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">TapTap（PC）</h2>
-            <span className="text-xs text-zinc-500">数据来自本地 JSON（DOM 解析抓取结果）</span>
+            <span className="text-xs text-zinc-500">数据来自 Supabase：<code className="rounded bg-zinc-100 px-1">taptap_hot_download</code> / <code className="rounded bg-zinc-100 px-1">taptap_test_hot</code></span>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
             {[
-              { title: "热门下载 Top20（数据）", data: tapHot },
-              { title: "测试热度 Top20（数据）", data: tapTest },
+              { title: "热门下载", key: "hot", pack: tapHot },
+              { title: "测试热度", key: "test", pack: tapTest },
             ].map((x) => (
-              <div key={x.title} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <div className="flex items-end justify-between gap-3">
+              <div key={x.key}>
+                <div className="mb-3 flex items-end justify-between gap-3">
                   <h3 className="text-base font-semibold">{x.title}</h3>
-                  <span className="text-xs text-zinc-500">{x.data?.meta.generatedAt ?? "—"}</span>
+                  <span className="text-xs text-zinc-500">{dateOnlyLabel(x.pack?.generatedAt)}</span>
                 </div>
-                <div className="mt-3 space-y-2">
-                  {x.data?.games?.length ? (
-                    x.data.games.slice(0, 20).map((g) => (
-                      <div key={g.rank} className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-zinc-900">
-                            <span className="mr-2 tabular-nums text-zinc-500">#{g.rank}</span>
-                            {g.title}
-                          </div>
-                          <div className="mt-0.5 truncate text-xs text-zinc-500">
-                            评分：{typeof g.rating === "number" ? g.rating.toFixed(1) : "—"} ·{" "}
-                            {g.tags.length ? `标签：${g.tags.slice(0, 5).join(" · ")}` : "标签：—"} · 状态：
-                            {g.test_status ?? "—"}
-                          </div>
-                        </div>
-                        {g.store_url ? (
-                          <a className="shrink-0 text-xs text-blue-600 hover:underline" href={g.store_url} target="_blank" rel="noreferrer">
-                            打开
-                          </a>
-                        ) : null}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-zinc-500">暂无数据。</div>
-                  )}
+                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                  <div className="divide-y divide-zinc-100">
+                    {x.pack?.games?.length ? (
+                      x.pack.games.slice(0, 20).map((g) => {
+                        const sub: string[] = [];
+                        if (typeof g.rating === "number") sub.push(`评分 ${g.rating.toFixed(1)}`);
+                        if (g.tags.length) sub.push(g.tags.slice(0, 5).join(" · "));
+                        if (g.test_status) sub.push(g.test_status);
+                        const subtitle = sub.length ? sub.join(" · ") : "—";
+                        return (
+                          <ChartListRow
+                            key={`${x.key}-${g.rank}`}
+                            rank={g.rank}
+                            coverUrl={g.cover_image}
+                            title={g.title}
+                            titleHref={g.store_url}
+                            subtitle={subtitle}
+                            priceMain={g.price ?? "—"}
+                          />
+                        );
+                      })
+                    ) : (
+                      <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold tracking-tight">4399 摘要</h2>
+            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">data_4399_summary</code>（取最新一条）</p>
+          </div>
+          {summary4399 ? (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              {summary4399.title ? <h3 className="text-base font-semibold text-zinc-900">{summary4399.title}</h3> : null}
+              {summary4399.updatedAt ? (
+                <p className="mt-1 text-xs text-zinc-500">更新：{dateOnlyLabel(summary4399.updatedAt)}</p>
+              ) : null}
+              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-700">
+                {summary4399.body}
+              </pre>
+              {summary4399.extra ? (
+                <a className="mt-3 inline-block text-xs text-blue-600 hover:underline" href={summary4399.extra} target="_blank" rel="noreferrer">
+                  相关链接
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
+              暂无数据。
+            </div>
+          )}
         </section>
 
       </main>

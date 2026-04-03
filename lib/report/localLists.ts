@@ -11,6 +11,7 @@ export type LocalListMeta = {
 export type EpicChartGame = {
   rank: number;
   name: string;
+  cover_image: string | null;
   current_price_usd: number | null;
   original_price_usd: number | null;
   discount_percent: number | null;
@@ -34,6 +35,7 @@ export type EpicUpcomingGame = {
 export type WgGame = {
   rank: number;
   title: string;
+  cover_image: string | null;
   tags: string[];
   price: string | null;
   store_url: string | null;
@@ -43,6 +45,7 @@ export type WgGame = {
 export type TapGame = {
   rank: number;
   title: string;
+  cover_image: string | null;
   rating: number | null;
   tags: string[];
   price: string | null;
@@ -93,6 +96,7 @@ export async function loadEpicCharts(): Promise<{
     return {
       rank,
       name,
+      cover_image: strOrNull(g?.cover_image ?? g?.header_image ?? g?.image_url),
       current_price_usd: g?.current_price_usd == null ? null : numOrNull(g.current_price_usd),
       original_price_usd: g?.original_price_usd == null ? null : numOrNull(g.original_price_usd),
       discount_percent: g?.discount_percent == null ? null : numOrNull(g.discount_percent),
@@ -165,6 +169,7 @@ export async function loadWeGameList(which: "bestseller" | "purchase" | "follow"
     return {
       rank,
       title,
+      cover_image: strOrNull(g?.cover_image ?? g?.header_image ?? g?.image_url),
       tags: arrStr(g?.tags),
       price: strOrNull(g?.price),
       store_url: strOrNull(g?.store_url),
@@ -198,6 +203,7 @@ export async function loadTapTapList(which: "hot_download" | "test_hot"): Promis
     return {
       rank,
       title,
+      cover_image: strOrNull(g?.cover_image ?? g?.header_image ?? g?.image_url),
       rating: g?.rating == null ? null : numOrNull(g.rating),
       tags: arrStr(g?.tags),
       price: strOrNull(g?.price),

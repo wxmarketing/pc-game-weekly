@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
     // Avoid workspace-root mis-detection when multiple lockfiles exist.
     root: __dirname,
   },
+  // 用局域网 IP / 自定义本机域名访问 dev 时，避免 _next 静态资源被跨站策略拦成 403（控制台可能连带报 “Host” 相关）
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
 };
 
 export default nextConfig;

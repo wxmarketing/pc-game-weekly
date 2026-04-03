@@ -46,9 +46,13 @@ export async function fetchSteamAppsBrief(
   if (uniqAppids.length === 0) return result;
 
   // NOTE: Steam appdetails does NOT accept comma-separated appids (400).
-  // We fetch per-appid, but with limited concurrency to keep it fast.
-  const concurrency = 6;
+  // 并发过高 + 同页多次并行拉取容易触发限流；并发宜低，并带 429/503 退避重试。
+  const concurrency = 3;
   let cursor = 0;
+
+  async function sleep(ms: number) {
+    await new Promise((r) => setTimeout(r, ms));
+  }
 
   async function fetchAppDetailsPayload(appid: number, params: { cc?: string; l?: string }) {
     const endpoint = new URL("https://store.steampowered.com/api/appdetails");
@@ -56,13 +60,28 @@ export async function fetchSteamAppsBrief(
     if (params.cc) endpoint.searchParams.set("cc", params.cc);
     if (params.l) endpoint.searchParams.set("l", params.l);
 
-    const resp = await fetch(endpoint.toString(), {
-      cache: "no-store",
-      headers: { "user-agent": "pc-game-weekly-bot/1.0", accept: "application/json" },
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const payload = (await resp.json()) as Record<string, SteamAppDetailsInner>;
-    return payload[String(appid)];
+    const url = endpoint.toString();
+    const maxAttempts = 4;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const resp = await fetch(url, {
+          cache: "no-store",
+          headers: { "user-agent": "pc-game-weekly-bot/1.0", accept: "application/json" },
+        });
+        if (resp.status === 429 || resp.status === 503 || resp.status === 502) {
+          await sleep(350 * attempt);
+          continue;
+        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const payload = (await resp.json()) as Record<string, SteamAppDetailsInner>;
+        return payload[String(appid)];
+      } catch (e) {
+        lastErr = e;
+        if (attempt < maxAttempts) await sleep(250 * attempt);
+      }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error("fetch appdetails failed");
   }
 
   async function fetchOne(appid: number) {

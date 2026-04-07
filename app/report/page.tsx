@@ -4,6 +4,7 @@ import {
   attachSteamAppBriefToUpcoming,
   attachSteamAppBriefToWeeklyReport,
   load4399SummaryFromSupabase,
+  loadEpicFreeGamesFromSupabase,
   loadEpicMostPlayedFromSupabase,
   loadEpicTopSellersFromSupabase,
   loadSteamMonthlyTopNewFromSupabase,
@@ -216,6 +217,7 @@ export default async function ReportPage() {
     summary4399,
     epicTop,
     epicMostPlayed,
+    epicFree,
     wgBestseller,
     wgPurchase,
     wgFollow,
@@ -229,6 +231,7 @@ export default async function ReportPage() {
     load4399SummaryFromSupabase(),
     loadEpicTopSellersFromSupabase(),
     loadEpicMostPlayedFromSupabase(),
+    loadEpicFreeGamesFromSupabase(),
     loadWeGameTableFromSupabase("wegame_bestseller"),
     loadWeGameTableFromSupabase("wegame_purchase"),
     loadWeGameTableFromSupabase("wegame_follow"),
@@ -606,7 +609,12 @@ export default async function ReportPage() {
                               ) : null}
                             </div>
                             <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                              {it.genres.length ? it.genres.join(" · ") : "类型未知"}
+                              {[
+                                it.genres.length ? it.genres.join(" · ") : "类型未知",
+                                typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
                             </div>
                           </div>
                         </div>
@@ -654,7 +662,12 @@ export default async function ReportPage() {
                             ) : null}
                           </div>
                           <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                            {it.genres.length ? it.genres.join(" · ") : "类型未知"}
+                            {[
+                              it.genres.length ? it.genres.join(" · ") : "类型未知",
+                              typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </div>
                         </div>
                         <div className="tabular-nums text-zinc-700">
@@ -967,6 +980,38 @@ export default async function ReportPage() {
                     <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h3 className="text-base font-semibold">本周免费游戏</h3>
+              <span className="text-xs text-zinc-500">{dateOnlyLabel(epicFree?.fetchDate ?? null)}</span>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+              <div className="divide-y divide-zinc-100">
+                {epicFree?.games?.length ? (
+                  epicFree.games.slice(0, 20).map((g) => {
+                    const parts: string[] = [];
+                    if (g.endAt) parts.push(`截止 ${dateOnlyLabel(g.endAt)}`);
+                    if (g.startAt) parts.push(`开始 ${dateOnlyLabel(g.startAt)}`);
+                    const subtitle = parts.length ? parts.join(" · ") : "—";
+                    return (
+                      <ChartListRow
+                        key={`epic-free-${g.rank}-${g.name}`}
+                        rank={g.rank}
+                        coverUrl={g.cover_image}
+                        title={g.name}
+                        titleHref={g.epic_store_url}
+                        subtitle={subtitle}
+                        priceMain="免费领取"
+                      />
+                    );
+                  })
+                ) : (
+                  <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
+                )}
               </div>
             </div>
           </div>

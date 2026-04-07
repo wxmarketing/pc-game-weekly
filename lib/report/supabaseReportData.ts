@@ -147,6 +147,7 @@ type KnownTable =
   | "data_4399_summary"
   | "epic_top_sellers"
   | "epic_most_played"
+  | "epic_free_games"
   | "wegame_bestseller"
   | "wegame_purchase"
   | "wegame_follow"
@@ -157,13 +158,14 @@ const BASE_TIME_COLS =
   "fetched_at,updated_at,created_at,ingested_at,snapshot_at,batch_at,period_start,fetch_date,generated_at,period_label,week_label,chart_name,source";
 
 const SELECT_COLS: Record<KnownTable, string> = {
-  steam_weekly_topsellers: `${BASE_TIME_COLS},rank,position,appid,app_id,steam_appid,name,title,game_name,price_text,price,final_price,current_price,price_cny,current_price_cny,discount_percent,discount,discount_pct,genres,tags,game_genres,rank_delta,rank_change,last_week_rank,prev_rank,is_new,is_new_entry,new_entry,entry_type,badge,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
+  steam_weekly_topsellers: `${BASE_TIME_COLS},rank,position,appid,app_id,steam_appid,name,title,game_name,price_text,price,final_price,current_price,price_cny,current_price_cny,discount_percent,discount,discount_pct,genres,tags,game_genres,weeks_on_chart,weeks,change,rank_delta,rank_change,last_week_rank,prev_rank,is_new,is_new_entry,new_entry,entry_type,badge,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
   steam_upcoming_popular: `${BASE_TIME_COLS},rank,position,appid,app_id,steam_appid,name,title,game_name,release_date,release_date_text,coming_date,followers,wishlist_count,follows,genres,tags,game_genres,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
   steam_monthly_top_new: `${BASE_TIME_COLS},rank,position,idx,tier,level,badge,category,appid,app_id,steam_appid,name,title,game_name,price_text,price,discount_percent,discount,genres,tags,game_genres,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
   steam_updates_summary: `${BASE_TIME_COLS},title,heading,name,period_label,body,content,summary,text,markdown,description,digest,source_url,url,link,payload`,
   data_4399_summary: `${BASE_TIME_COLS},title,heading,name,period_label,body,content,summary,text,markdown,description,digest,source_url,url,link,payload`,
   epic_top_sellers: `${BASE_TIME_COLS},rank,position,name,title,game_name,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
   epic_most_played: `${BASE_TIME_COLS},rank,position,name,title,game_name,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
+  epic_free_games: `${BASE_TIME_COLS},rank,position,name,title,game_name,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb,promo_start,promo_end,description,desc`,
   wegame_bestseller: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
   wegame_purchase: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
   wegame_follow: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
@@ -202,6 +204,7 @@ export type SteamWeeklyDbItem = {
   discountPercent: number | null;
   headerImage: string | null;
   genres: string[];
+  weeksOnChart: number | null;
   rankDelta: number | null;
   isNewEntry: boolean;
 };
@@ -217,7 +220,8 @@ function rowToSteamWeeklyItem(r: Row): SteamWeeklyDbItem | null {
   const aid = appid && appid > 0 ? appid : null;
   const headerImage = resolveSteamHeaderImage(r, aid);
   const genres = genresFromRow(r);
-  let rankDelta = num(r, "rank_delta", "rank_change");
+  const weeksOnChart = num(r, "weeks_on_chart", "weeks", "weeksOnChart");
+  let rankDelta = num(r, "change", "rank_delta", "rank_change");
   const lastWeek = num(r, "last_week_rank", "prev_rank");
   if (rankDelta == null && lastWeek != null && lastWeek > 0) rankDelta = lastWeek - rank;
   if (lastWeek === -1) rankDelta = null;
@@ -233,6 +237,7 @@ function rowToSteamWeeklyItem(r: Row): SteamWeeklyDbItem | null {
     discountPercent,
     headerImage,
     genres,
+    weeksOnChart,
     rankDelta: rankDelta ?? null,
     isNewEntry: !!isNew,
   };
@@ -438,6 +443,17 @@ function rowToSummary(r: Row): TextSummaryBlock | null {
   };
 }
 
+function stripTitleWrappers(input: string): string {
+  let s = input.trim();
+  // 去掉首尾书名号/引号等包装符号（只处理两端，不影响中间字符）
+  const open = new Set(["《", "「", "『", "“", "\"", "'", "【", "[", "(", "（"]);
+  const close = new Set(["》", "」", "』", "”", "\"", "'", "】", "]", ")", "）"]);
+  while (s.length >= 2 && open.has(s[0]!) && close.has(s[s.length - 1]!)) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 export async function loadSteamUpdatesSummaryFromSupabase(): Promise<TextSummaryBlock | null> {
   const raw = await fetchAllRowsCached("steam_updates_summary", 200);
   if (!raw.length) return null;
@@ -466,7 +482,7 @@ function rowToEpicGame(r: Row): EpicChartGame | null {
   if (rank == null || rank <= 0 || !name) return null;
   return {
     rank,
-    name,
+    name: stripTitleWrappers(name),
     cover_image: str(r, "cover_image", "header_image", "image_url", "thumbnail", "thumb"),
     current_price_usd: num(r, "current_price_usd", "price_usd", "current_price"),
     original_price_usd: num(r, "original_price_usd", "msrp_usd"),
@@ -494,6 +510,42 @@ export async function loadEpicMostPlayedFromSupabase(): Promise<{ games: EpicCha
   const games = sortByRank(batch).map(rowToEpicGame).filter((x): x is EpicChartGame => x != null);
   if (!games.length) return null;
   const fd = str(batch[0]!, "fetch_date", "fetched_at", "updated_at", "created_at");
+  return { games, fetchDate: fd };
+}
+
+export type EpicFreeGame = {
+  rank: number;
+  name: string;
+  cover_image: string | null;
+  epic_store_url: string | null;
+  startAt: string | null;
+  endAt: string | null;
+};
+
+function rowToEpicFreeGame(r: Row, fallbackRank: number): EpicFreeGame | null {
+  const name = str(r, "name", "title", "game_name");
+  if (!name) return null;
+  const rank = num(r, "rank", "position") ?? fallbackRank;
+  return {
+    rank,
+    name: stripTitleWrappers(name),
+    cover_image: str(r, "cover_image", "header_image", "image_url", "thumbnail", "thumb"),
+    epic_store_url: str(r, "epic_store_url", "store_url", "url"),
+    startAt: str(r, "promo_start"),
+    endAt: str(r, "promo_end"),
+  };
+}
+
+export async function loadEpicFreeGamesFromSupabase(): Promise<{ games: EpicFreeGame[]; fetchDate: string | null } | null> {
+  const raw = await fetchAllRowsCached("epic_free_games", 200);
+  if (!raw.length) return null;
+  const batch = pickLatestBatch(raw);
+  const games = batch
+    .map((r, i) => rowToEpicFreeGame(r, i + 1))
+    .filter((x): x is EpicFreeGame => x != null)
+    .sort((a, b) => a.rank - b.rank);
+  if (!games.length) return null;
+  const fd = str(batch[0]!, "fetch_date", "fetched_at", "updated_at", "created_at", "generated_at");
   return { games, fetchDate: fd };
 }
 

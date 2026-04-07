@@ -76,6 +76,16 @@ function arrStr(v: any): string[] {
   return Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()) : [];
 }
 
+function stripTitleWrappers(input: string): string {
+  let s = input.trim();
+  const open = new Set(["《", "「", "『", "“", "\"", "'", "【", "[", "(", "（"]);
+  const close = new Set(["》", "」", "』", "”", "\"", "'", "】", "]", ")", "）"]);
+  while (s.length >= 2 && open.has(s[0]!) && close.has(s[s.length - 1]!)) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 export async function loadEpicCharts(): Promise<{
   meta: LocalListMeta;
   topSellers: EpicChartGame[];
@@ -95,7 +105,7 @@ export async function loadEpicCharts(): Promise<{
     if (!Number.isFinite(rank) || rank <= 0 || !name) return null;
     return {
       rank,
-      name,
+      name: stripTitleWrappers(name),
       cover_image: strOrNull(g?.cover_image ?? g?.header_image ?? g?.image_url),
       current_price_usd: g?.current_price_usd == null ? null : numOrNull(g.current_price_usd),
       original_price_usd: g?.original_price_usd == null ? null : numOrNull(g.original_price_usd),

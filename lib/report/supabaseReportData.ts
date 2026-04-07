@@ -9,7 +9,31 @@ function num(r: Row, ...keys: string[]): number | null {
   for (const k of keys) {
     const v = r[k];
     if (v == null || v === "") continue;
-    const n = typeof v === "number" ? v : Number(v);
+    if (typeof v === "number") {
+      if (Number.isFinite(v)) return v;
+      continue;
+    }
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) continue;
+      const direct = Number(s);
+      if (Number.isFinite(direct)) return direct;
+
+      // 支持 Supabase 文本列里用箭头表达变化（例如 "▲ 3" / "▼2" / "↑ 1" / "↓ 4"）
+      const hasDown = /[▼▽↓−-]/.test(s);
+      const hasUp = /[▲△↑+＋]/.test(s);
+      const m = s.match(/(\d+(?:\.\d+)?)/);
+      if (m) {
+        const base = Number(m[1]);
+        if (Number.isFinite(base)) {
+          const sign = hasDown && !hasUp ? -1 : 1;
+          return sign * base;
+        }
+      }
+      continue;
+    }
+
+    const n = Number(v);
     if (Number.isFinite(n)) return n;
   }
   return null;
@@ -162,9 +186,9 @@ const SELECT_COLS: Record<KnownTable, string> = {
   steam_upcoming_popular: `${BASE_TIME_COLS},rank,position,appid,app_id,steam_appid,name,title,game_name,release_date,release_date_text,coming_date,followers,wishlist_count,follows,genres,tags,game_genres,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
   steam_monthly_top_new: `${BASE_TIME_COLS},rank,position,idx,tier,level,badge,category,appid,app_id,steam_appid,name,title,game_name,price_text,price,discount_percent,discount,genres,tags,game_genres,cover_image,header_image,header_image_url,headerImage,capsule_image,capsule_image_url,small_capsule,library_capsule,image_url,image,payload,extra,assets,media`,
   steam_updates_summary: `${BASE_TIME_COLS},title,heading,name,period_label,body,content,summary,text,markdown,description,digest,source_url,url,link,payload`,
-  data_4399_summary: `${BASE_TIME_COLS},title,heading,name,period_label,body,content,summary,text,markdown,description,digest,source_url,url,link,payload`,
-  epic_top_sellers: `${BASE_TIME_COLS},rank,position,name,title,game_name,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
-  epic_most_played: `${BASE_TIME_COLS},rank,position,name,title,game_name,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
+  data_4399_summary: `${BASE_TIME_COLS},time_window,total_count,category_breakdown,source_url,url,link,payload,title,heading,name,period_label`,
+  epic_top_sellers: `${BASE_TIME_COLS},rank,position,name,title,game_name,tags,genres,game_genres,current_price_num,original_price_num,currency,original_price,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
+  epic_most_played: `${BASE_TIME_COLS},rank,position,name,title,game_name,tags,genres,game_genres,current_price_num,original_price_num,currency,original_price,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
   epic_free_games: `${BASE_TIME_COLS},rank,position,name,title,game_name,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb,promo_start,promo_end,description,desc`,
   wegame_bestseller: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
   wegame_purchase: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
@@ -476,6 +500,49 @@ export async function load4399SummaryFromSupabase(): Promise<TextSummaryBlock | 
   return rowToSummary(sorted[0]!);
 }
 
+export type Data4399NewGamesSummary = {
+  timeWindow: string | null;
+  totalCount: number | null;
+  categoryBreakdown: Record<string, number>;
+  updatedAt: string | null;
+};
+
+function parseCategoryBreakdown(v: unknown): Record<string, number> {
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    const out: Record<string, number> = {};
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      const n = typeof val === "number" ? val : Number(val);
+      if (Number.isFinite(n) && n >= 0) out[String(k)] = n;
+    }
+    return out;
+  }
+  if (typeof v === "string" && v.trim()) {
+    try {
+      return parseCategoryBreakdown(JSON.parse(v));
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+export async function load4399NewGamesSummaryFromSupabase(): Promise<Data4399NewGamesSummary | null> {
+  const raw = await fetchAllRowsCached("data_4399_summary", 200);
+  if (!raw.length) return null;
+  const sorted = [...raw].sort((a, b) => {
+    const ta = Date.parse(String(a.updated_at ?? a.created_at ?? 0));
+    const tb = Date.parse(String(b.updated_at ?? b.created_at ?? 0));
+    return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+  });
+  const r = sorted[0]!;
+  const timeWindow = str(r, "time_window", "window", "period", "range");
+  const totalCount = num(r, "total_count", "count", "new_count");
+  const categoryBreakdown = parseCategoryBreakdown((r as Row).category_breakdown);
+  const updatedAt = str(r, "updated_at", "created_at", "fetched_at");
+  if (!timeWindow && totalCount == null && Object.keys(categoryBreakdown).length === 0) return null;
+  return { timeWindow, totalCount, categoryBreakdown, updatedAt };
+}
+
 function rowToEpicGame(r: Row): EpicChartGame | null {
   const rank = num(r, "rank", "position");
   const name = str(r, "name", "title", "game_name");
@@ -484,6 +551,10 @@ function rowToEpicGame(r: Row): EpicChartGame | null {
     rank,
     name: stripTitleWrappers(name),
     cover_image: str(r, "cover_image", "header_image", "image_url", "thumbnail", "thumb"),
+    tags: genresFromRow(r),
+    currency: str(r, "currency", "price_currency"),
+    current_price_num: num(r, "current_price_num", "current_price", "price_num", "price_number"),
+    original_price_num: num(r, "original_price_num", "original_price_number", "original_price"),
     current_price_usd: num(r, "current_price_usd", "price_usd", "current_price"),
     original_price_usd: num(r, "original_price_usd", "msrp_usd"),
     discount_percent: num(r, "discount_percent", "discount"),

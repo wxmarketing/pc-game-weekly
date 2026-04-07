@@ -12,6 +12,10 @@ export type EpicChartGame = {
   rank: number;
   name: string;
   cover_image: string | null;
+  tags: string[];
+  currency: string | null;
+  current_price_num: number | null;
+  original_price_num: number | null;
   current_price_usd: number | null;
   original_price_usd: number | null;
   discount_percent: number | null;
@@ -107,6 +111,10 @@ export async function loadEpicCharts(): Promise<{
       rank,
       name: stripTitleWrappers(name),
       cover_image: strOrNull(g?.cover_image ?? g?.header_image ?? g?.image_url),
+      tags: arrStr(g?.tags),
+      currency: strOrNull(g?.currency),
+      current_price_num: g?.current_price_num == null ? null : numOrNull(g.current_price_num),
+      original_price_num: g?.original_price_num == null ? null : numOrNull(g.original_price_num),
       current_price_usd: g?.current_price_usd == null ? null : numOrNull(g.current_price_usd),
       original_price_usd: g?.original_price_usd == null ? null : numOrNull(g.original_price_usd),
       discount_percent: g?.discount_percent == null ? null : numOrNull(g.discount_percent),

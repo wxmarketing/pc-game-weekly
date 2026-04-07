@@ -4,6 +4,7 @@ import {
   attachSteamAppBriefToUpcoming,
   attachSteamAppBriefToWeeklyReport,
   load4399SummaryFromSupabase,
+  load4399NewGamesSummaryFromSupabase,
   loadEpicFreeGamesFromSupabase,
   loadEpicMostPlayedFromSupabase,
   loadEpicTopSellersFromSupabase,
@@ -17,6 +18,7 @@ import {
 import { fetchSteamAppsBrief, type SteamAppBrief } from "@/lib/steam/appDetails";
 import { BrowserSharePie } from "./BrowserSharePie";
 import { SharePie } from "./SharePie";
+import { WeGameSection } from "./WeGameSection";
 import type { ReactNode } from "react";
 
 /** 每次请求拉最新 Supabase 数据，避免静态化把空数据焊进 HTML */
@@ -48,24 +50,13 @@ function dateOnlyLabel(raw: string | null | undefined): string {
 }
 
 function Arrow({ delta }: { delta: number | null }) {
-  if (delta == null) return null;
-  if (delta > 0)
-    return (
-      <span className="ml-1 inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-        ↑{delta}
-      </span>
-    );
-  if (delta < 0)
-    return (
-      <span className="ml-1 inline-flex items-center rounded-md bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold text-rose-700">
-        ↓{Math.abs(delta)}
-      </span>
-    );
-  return (
-    <span className="ml-1 inline-flex items-center rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-semibold text-zinc-600">
-      →0
-    </span>
-  );
+  // 固定宽度占位，避免「↑/↓/→0/空」导致每行对不齐
+  const base =
+    "ml-2 inline-flex h-7 min-w-9 items-center justify-center rounded-md px-1.5 text-[11px] font-semibold tabular-nums";
+  if (delta == null) return <span className={`${base} opacity-0`}>—</span>;
+  if (delta > 0) return <span className={`${base} bg-emerald-50 text-emerald-700`}>↑{delta}</span>;
+  if (delta < 0) return <span className={`${base} bg-rose-50 text-rose-700`}>↓{Math.abs(delta)}</span>;
+  return <span className={`${base} bg-zinc-100 text-zinc-600`}>→0</span>;
 }
 
 function SteamAppLink({
@@ -157,9 +148,9 @@ function ChartListRow({
     </ExternalStoreLink>
   );
   const priceBlock = (
-    <div className="tabular-nums text-zinc-700">
-      <div className="text-sm font-semibold text-zinc-900">{priceMain}</div>
-      {priceExtra ? <div className="mt-1">{priceExtra}</div> : null}
+    <div className="w-16 shrink-0 tabular-nums text-zinc-700 flex flex-col items-center">
+      <div className="text-sm font-semibold text-zinc-900 text-center">{priceMain}</div>
+      {priceExtra ? <div className="mt-1 flex justify-center w-full">{priceExtra}</div> : null}
     </div>
   );
   return (
@@ -196,6 +187,13 @@ function ChartListRow({
   );
 }
 
+function formatMoney(amount: number, currency: string | null | undefined): string {
+  const c = (currency || "").trim().toUpperCase();
+  const symbol = c === "CNY" ? "¥" : c === "USD" ? "$" : c === "EUR" ? "€" : c === "GBP" ? "£" : null;
+  const fixed = Number.isFinite(amount) ? amount.toFixed(2).replace(/\.00$/, "") : String(amount);
+  return symbol ? `${symbol}${fixed}` : c ? `${fixed} ${c}` : fixed;
+}
+
 export default async function ReportPage() {
   let browserShare: Awaited<ReturnType<typeof getLatestBrowserShare>> = null;
   let pcShipments: Awaited<ReturnType<typeof getLatestPcShipmentsQuarterly>> = null;
@@ -215,6 +213,7 @@ export default async function ReportPage() {
     steamMonthlyNew,
     steamUpdatesSummary,
     summary4399,
+    summary4399New,
     epicTop,
     epicMostPlayed,
     epicFree,
@@ -229,6 +228,7 @@ export default async function ReportPage() {
     loadSteamMonthlyTopNewFromSupabase(),
     loadSteamUpdatesSummaryFromSupabase(),
     load4399SummaryFromSupabase(),
+    load4399NewGamesSummaryFromSupabase(),
     loadEpicTopSellersFromSupabase(),
     loadEpicMostPlayedFromSupabase(),
     loadEpicFreeGamesFromSupabase(),
@@ -687,68 +687,71 @@ export default async function ReportPage() {
 
             <section className="grid gap-6 sm:grid-cols-2">
               <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <h3 className="text-base font-semibold">本周新上榜</h3>
-                <div className="mt-3 space-y-2">
-                  {steamWeeklyEnriched.newEntries.length === 0 ? (
-                    <div className="text-sm text-zinc-500">当前批次没有标记为新上榜的条目。</div>
-                  ) : (
-                    steamWeeklyEnriched.newEntries.slice(0, 10).map((it) => (
-                      <div key={it.appid ?? it.rank} className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <SteamAppLink appid={it.appid} className="truncate text-sm font-medium hover:underline">
-                            {it.name || `App ${it.appid}`}
-                          </SteamAppLink>
-                          <div className="truncate text-xs text-zinc-500">
-                            {it.genres.length ? it.genres.join(" · ") : "类型未知"}
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-xs font-semibold text-zinc-600">#{it.rank}</div>
-                      </div>
-                    ))
-                  )}
+                <h3 className="text-base font-semibold">本周上升最多</h3>
+                <div className="mt-3 overflow-hidden rounded-xl border border-zinc-100">
+                  <div className="divide-y divide-zinc-100">
+                    {steamWeeklyEnriched.moversUp.length === 0 ? (
+                      <div className="p-6 text-sm text-zinc-500">暂无。</div>
+                    ) : (
+                      steamWeeklyEnriched.moversUp.map((it) => (
+                        <ChartListRow
+                          key={`up-${it.appid ?? it.rank}`}
+                          rank={it.rank}
+                          coverUrl={it.headerImage}
+                          title={it.name || (it.appid ? `App ${it.appid}` : "—")}
+                          titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                          subtitle={[
+                            it.genres.length ? it.genres.join(" · ") : "类型未知",
+                            typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          priceMain={it.priceText || "-"}
+                          priceExtra={
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                ↑{it.rankDelta ?? "—"}
+                              </span>
+                            </div>
+                          }
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <h3 className="text-base font-semibold">本周涨跌幅最大</h3>
-                <div className="mt-3 grid gap-4">
-                  <div>
-                    <div className="text-xs font-medium text-zinc-500">上升</div>
-                    <div className="mt-2 space-y-2">
-                      {steamWeeklyEnriched.moversUp.length === 0 ? (
-                        <div className="text-sm text-zinc-500">暂无。</div>
-                      ) : (
-                        steamWeeklyEnriched.moversUp.map((it) => (
-                          <div key={it.appid ?? it.rank} className="flex items-center justify-between gap-3">
-                            <SteamAppLink appid={it.appid} className="min-w-0 truncate text-sm font-medium hover:underline">
-                              {it.name || `App ${it.appid}`}
-                            </SteamAppLink>
-                            <div className="shrink-0 text-xs font-semibold text-emerald-700">
-                              ↑{it.rankDelta}
+                <h3 className="text-base font-semibold">本周下降最多</h3>
+                <div className="mt-3 overflow-hidden rounded-xl border border-zinc-100">
+                  <div className="divide-y divide-zinc-100">
+                    {steamWeeklyEnriched.moversDown.length === 0 ? (
+                      <div className="p-6 text-sm text-zinc-500">暂无。</div>
+                    ) : (
+                      steamWeeklyEnriched.moversDown.map((it) => (
+                        <ChartListRow
+                          key={`down-${it.appid ?? it.rank}`}
+                          rank={it.rank}
+                          coverUrl={it.headerImage}
+                          title={it.name || (it.appid ? `App ${it.appid}` : "—")}
+                          titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                          subtitle={[
+                            it.genres.length ? it.genres.join(" · ") : "类型未知",
+                            typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          priceMain={it.priceText || "-"}
+                          priceExtra={
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                                ↓{Math.abs(it.rankDelta ?? 0) || "—"}
+                              </span>
                             </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-zinc-500">下降</div>
-                    <div className="mt-2 space-y-2">
-                      {steamWeeklyEnriched.moversDown.length === 0 ? (
-                        <div className="text-sm text-zinc-500">暂无。</div>
-                      ) : (
-                        steamWeeklyEnriched.moversDown.map((it) => (
-                          <div key={it.appid ?? it.rank} className="flex items-center justify-between gap-3">
-                            <SteamAppLink appid={it.appid} className="min-w-0 truncate text-sm font-medium hover:underline">
-                              {it.name || `App ${it.appid}`}
-                            </SteamAppLink>
-                            <div className="shrink-0 text-xs font-semibold text-rose-700">
-                              ↓{Math.abs(it.rankDelta ?? 0)}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                          }
+                        />
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -846,10 +849,10 @@ export default async function ReportPage() {
           </div>
           {steamMonthlyNewEnriched?.items?.length ? (
             <div className="grid gap-6 sm:grid-cols-2">
-              {(["gold", "silver", "other"] as const)
+              {(["gold", "silver"] as const)
                 .filter((tier) => steamMonthlyNewEnriched.items.some((x) => x.tier === tier))
                 .map((tier) => {
-                const title = tier === "gold" ? "黄金级" : tier === "silver" ? "白银级" : "其他";
+                const title = tier === "gold" ? "黄金级" : "白银级";
                 const list = steamMonthlyNewEnriched.items.filter((x) => x.tier === tier);
                 return (
                   <div key={tier} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -915,19 +918,18 @@ export default async function ReportPage() {
                 <div className="divide-y divide-zinc-100">
                   {epicCharts?.topSellers?.length ? (
                     epicCharts.topSellers.slice(0, 10).map((g) => {
-                      const sub: string[] = [];
-                      if (g.original_price_usd != null) sub.push(`原价 USD ${g.original_price_usd.toFixed(2)}`);
-                      if (g.weeks_on_chart != null) sub.push(`在榜 ${g.weeks_on_chart} 周`);
-                      const subtitle = sub.length ? sub.join(" · ") : "—";
+                      const subtitle = g.tags.length ? g.tags.slice(0, 3).join(" · ") : "标签未知";
                       const priceMain =
                         g.is_free === true
                           ? "免费开玩"
-                          : g.current_price_usd != null
-                            ? `USD ${g.current_price_usd.toFixed(2)}`
+                          : g.current_price_num != null
+                            ? formatMoney(g.current_price_num, g.currency)
+                            : g.current_price_usd != null
+                              ? formatMoney(g.current_price_usd, "USD")
                             : "—";
                       const priceExtra =
                         typeof g.discount_percent === "number" && g.discount_percent > 0 ? (
-                          <span className="inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+                          <span className="inline-block min-w-10 text-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
                             -{g.discount_percent}%
                           </span>
                         ) : undefined;
@@ -960,10 +962,7 @@ export default async function ReportPage() {
                 <div className="divide-y divide-zinc-100">
                   {epicCharts?.mostPlayed?.length ? (
                     epicCharts.mostPlayed.slice(0, 10).map((g) => {
-                      const parts: string[] = [];
-                      if (g.is_free != null) parts.push(g.is_free ? "免费开玩" : "付费");
-                      if (g.weeks_on_chart != null) parts.push(`在榜 ${g.weeks_on_chart} 周`);
-                      const subtitle = parts.length ? parts.join(" · ") : "—";
+                      const subtitle = g.tags.length ? g.tags.slice(0, 3).join(" · ") : "标签未知";
                       return (
                         <ChartListRow
                           key={`epic-mp-${g.rank}`}
@@ -972,7 +971,22 @@ export default async function ReportPage() {
                           title={g.name}
                           titleHref={g.epic_store_url}
                           subtitle={subtitle}
-                          priceMain="—"
+                          priceMain={
+                            g.is_free === true
+                              ? "免费开玩"
+                              : g.current_price_num != null
+                                ? formatMoney(g.current_price_num, g.currency)
+                                : g.current_price_usd != null
+                                  ? formatMoney(g.current_price_usd, "USD")
+                                  : "—"
+                          }
+                          priceExtra={
+                            typeof g.discount_percent === "number" && g.discount_percent > 0 ? (
+                              <span className="inline-block min-w-10 text-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+                                -{g.discount_percent}%
+                              </span>
+                            ) : undefined
+                          }
                         />
                       );
                     })
@@ -1017,55 +1031,7 @@ export default async function ReportPage() {
           </div>
         </section>
 
-        <section className="mt-10">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">WeGame</h2>
-            <span className="text-xs text-zinc-500">数据来自 Supabase：<code className="rounded bg-zinc-100 px-1">wegame_bestseller</code> / <code className="rounded bg-zinc-100 px-1">wegame_purchase</code> / <code className="rounded bg-zinc-100 px-1">wegame_follow</code></span>
-          </div>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {[
-              { title: "火爆新品", table: "wegame_bestseller" as const, pack: wgBestseller },
-              { title: "本周热销", table: "wegame_purchase" as const, pack: wgPurchase },
-              { title: "新游预约", table: "wegame_follow" as const, pack: wgFollow },
-            ].map((x) => (
-              <div key={x.table}>
-                <div className="mb-3 flex items-end justify-between gap-3">
-                  <h3 className="text-base font-semibold">{x.title}</h3>
-                  <span className="text-xs text-zinc-500">{dateOnlyLabel(x.pack?.generatedAt)}</span>
-                </div>
-                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                  <div className="divide-y divide-zinc-100">
-                    {x.pack?.games?.length ? (
-                      x.pack.games.slice(0, 15).map((g) => {
-                        const subtitle = g.tags.length ? g.tags.slice(0, 5).join(" · ") : "标签未知";
-                        const priceExtra =
-                          typeof g.weekly_follows === "number" ? (
-                            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                              本周预约 {g.weekly_follows.toLocaleString()}
-                            </span>
-                          ) : undefined;
-                        return (
-                          <ChartListRow
-                            key={`${x.table}-${g.rank}`}
-                            rank={g.rank}
-                            coverUrl={g.cover_image}
-                            title={g.title}
-                            titleHref={g.store_url}
-                            subtitle={subtitle}
-                            priceMain={g.price ?? "—"}
-                            priceExtra={priceExtra}
-                          />
-                        );
-                      })
-                    ) : (
-                      <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <WeGameSection bestseller={wgBestseller} purchase={wgPurchase} follow={wgFollow} />
 
         <section className="mt-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -1088,8 +1054,27 @@ export default async function ReportPage() {
                       x.pack.games.slice(0, 20).map((g) => {
                         const sub: string[] = [];
                         if (typeof g.rating === "number") sub.push(`评分 ${g.rating.toFixed(1)}`);
-                        if (g.tags.length) sub.push(g.tags.slice(0, 5).join(" · "));
-                        if (g.test_status) sub.push(g.test_status);
+                        if (g.tags.length) {
+                          const norm = (s: string) =>
+                            s
+                              .trim()
+                              .replace(/\s+/g, "")
+                              .replace(/[·•・•]/g, "")
+                              .replace(/[（()）]/g, "");
+                          const cleanedTags = g.tags
+                            .map((t) => t.trim())
+                            .filter(Boolean)
+                            .filter((t) => {
+                              // 热门下载右侧已显示“免费下载/¥xx”等，避免副标题重复出现同一文案
+                              if (x.key !== "hot") return true;
+                              if (norm(t) === "免费下载") return false;
+                              if ((g.price ?? "").trim() && norm(t) === norm(g.price ?? "")) return false;
+                              return true;
+                            })
+                            .slice(0, 3);
+                          if (cleanedTags.length) sub.push(cleanedTags.join(" · "));
+                        }
+                        // TapTap：热门下载/测试热度 都不在副标题重复展示 test_status（测试热度右侧已展示）
                         const subtitle = sub.length ? sub.join(" · ") : "—";
                         return (
                           <ChartListRow
@@ -1099,7 +1084,7 @@ export default async function ReportPage() {
                             title={g.title}
                             titleHref={g.store_url}
                             subtitle={subtitle}
-                            priceMain={g.price ?? "—"}
+                            priceMain={x.key === "test" ? g.test_status ?? "—" : g.price ?? "—"}
                           />
                         );
                       })
@@ -1118,7 +1103,64 @@ export default async function ReportPage() {
             <h2 className="text-lg font-semibold tracking-tight">4399 摘要</h2>
             <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">data_4399_summary</code>（取最新一条）</p>
           </div>
-          {summary4399 ? (
+          {summary4399New ? (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-900">周期内上新统计</h3>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    统计周期：<span className="font-medium text-zinc-800">{summary4399New.timeWindow ?? "—"}</span>
+                    {summary4399New.updatedAt ? (
+                      <span className="ml-2">更新：{dateOnlyLabel(summary4399New.updatedAt)}</span>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                  <div className="text-[11px] font-medium text-zinc-500">周期内上新</div>
+                  <div className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
+                    {typeof summary4399New.totalCount === "number" ? summary4399New.totalCount.toLocaleString() : "—"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="text-xs font-medium text-zinc-600">类别分布</div>
+                {Object.keys(summary4399New.categoryBreakdown).length ? (
+                  <div className="mt-3 grid gap-2">
+                    {(() => {
+                      const entries = Object.entries(summary4399New.categoryBreakdown)
+                        .filter(([, v]) => typeof v === "number" && Number.isFinite(v) && v > 0)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 10);
+                      const total = entries.reduce((acc, [, v]) => acc + v, 0);
+                      return entries.map(([k, v]) => {
+                        const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+                        return (
+                          <div key={k} className="flex items-center gap-3">
+                            <div className="w-20 shrink-0 truncate text-xs text-zinc-700" title={k}>
+                              {k}
+                            </div>
+                            <div className="flex-1">
+                              <div className="h-2.5 overflow-hidden rounded-full bg-zinc-100">
+                                <div className="h-full rounded-full bg-zinc-900/70" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                            <div className="w-20 shrink-0 text-right tabular-nums text-xs text-zinc-600">
+                              {v.toLocaleString()} <span className="text-zinc-400">({pct}%)</span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
+                    暂无类别分布数据。
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : summary4399 ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               {summary4399.title ? <h3 className="text-base font-semibold text-zinc-900">{summary4399.title}</h3> : null}
               {summary4399.updatedAt ? (

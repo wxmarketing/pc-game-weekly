@@ -43,7 +43,7 @@ export function PlatformNav() {
   /* ---- scroll 驱动跟踪当前 section ---- */
   useEffect(() => {
     // 按页面顺序收集所有 section 元素
-    const orderedIds = NAV_ITEMS.map((n) => n.id);
+    const orderedIds: string[] = NAV_ITEMS.map((n) => n.id);
     const elements = Array.from(
       document.querySelectorAll<HTMLElement>("[data-section-id]"),
     )

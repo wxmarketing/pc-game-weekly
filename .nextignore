@@ -1,0 +1,13 @@
+# 非代码目录，不需要 Turbopack / Next.js 监听和解析
+data_sources/
+data/
+scripts/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.html
+*.csv
+*.json
+!package.json
+!tsconfig.json

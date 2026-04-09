@@ -48,10 +48,12 @@ async function main() {
   killExisting();
 
   console.log("Starting dev server...");
-  // Keep dev server stable on macOS:
-  // - Use Webpack mode (Next 16 defaults to Turbopack otherwise).
-  // - Prefer polling watcher to avoid EMFILE (too many open files).
-  const env = { ...process.env, WATCHPACK_POLLING: process.env.WATCHPACK_POLLING ?? "true" };
+  // macOS uses fsevents natively — no need for polling.
+  // Limit heap to 2 GB so runaway watchers can't eat all memory.
+  const env = {
+    ...process.env,
+    NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=2048`.trim(),
+  };
   const child = spawn(
     process.platform === "win32" ? "npm.cmd" : "npm",
     ["run", "dev", "--", "--webpack", "--hostname", HOST, "--port", String(PORT)],

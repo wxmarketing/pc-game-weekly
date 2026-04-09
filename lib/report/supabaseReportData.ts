@@ -68,6 +68,18 @@ function genresFromRow(r: Row): string[] {
   return [];
 }
 
+/** 从 batch 首行提取最佳时间字符串 */
+function extractFetchDate(batch: Row[]): string | null {
+  if (!batch.length) return null;
+  const r = batch[0]!;
+  const timeCols = ["fetched_at", "ingested_at", "snapshot_at", "batch_at", "created_at", "updated_at", "period_start"] as const;
+  for (const c of timeCols) {
+    const v = r[c];
+    if (v != null && String(v).trim() !== "") return String(v).trim();
+  }
+  return null;
+}
+
 /** 若表按批次写入，取时间列最新的一批 */
 function pickLatestBatch(rows: Row[]): Row[] {
   if (rows.length === 0) return [];
@@ -189,7 +201,7 @@ const SELECT_COLS: Record<KnownTable, string> = {
   data_4399_summary: `${BASE_TIME_COLS},time_window,total_count,category_breakdown,source_url,url,link,payload,title,heading,name,period_label`,
   epic_top_sellers: `${BASE_TIME_COLS},rank,position,name,title,game_name,tags,genres,game_genres,current_price_num,original_price_num,currency,original_price,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
   epic_most_played: `${BASE_TIME_COLS},rank,position,name,title,game_name,tags,genres,game_genres,current_price_num,original_price_num,currency,original_price,current_price_usd,price_usd,current_price,original_price_usd,msrp_usd,discount_percent,discount,weeks_on_chart,weeks,is_free,free,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb`,
-  epic_free_games: `${BASE_TIME_COLS},rank,position,name,title,game_name,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb,promo_start,promo_end,description,desc`,
+  epic_free_games: `${BASE_TIME_COLS},rank,position,name,title,game_name,tags,genres,game_genres,epic_store_url,store_url,url,cover_image,header_image,image_url,thumbnail,thumb,promo_start,promo_end,description,desc`,
   wegame_bestseller: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
   wegame_purchase: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
   wegame_follow: `${BASE_TIME_COLS},rank,position,title,name,game_name,tags,genres,game_genres,price,price_text,store_url,url,link,weekly_follows,follows,reservations,cover_image,header_image,image_url,thumbnail,thumb`,
@@ -268,11 +280,11 @@ function rowToSteamWeeklyItem(r: Row): SteamWeeklyDbItem | null {
 }
 
 export async function loadSteamWeeklyTopsellersFromSupabase(): Promise<{
-  meta: { label: string | null };
+  meta: { label: string | null; fetchDate: string | null };
   items: SteamWeeklyDbItem[];
   newEntries: SteamWeeklyDbItem[];
   moversUp: SteamWeeklyDbItem[];
-  moversDown: SteamWeeklyDbItem[];
+  newOnChart: SteamWeeklyDbItem[];
 } | null> {
   const raw = await fetchAllRowsCached("steam_weekly_topsellers", 800);
   if (!raw.length) return null;
@@ -284,9 +296,10 @@ export async function loadSteamWeeklyTopsellersFromSupabase(): Promise<{
   const newEntries = items.filter((it) => it.isNewEntry);
   const movers = items.filter((it) => typeof it.rankDelta === "number" && it.rankDelta !== 0);
   const moversUp = [...movers].sort((a, b) => (b.rankDelta ?? 0) - (a.rankDelta ?? 0)).slice(0, 5);
-  const moversDown = [...movers].sort((a, b) => (a.rankDelta ?? 0) - (b.rankDelta ?? 0)).slice(0, 5);
+  const newOnChart = items.filter((it) => it.weeksOnChart === 1);
   const label = str(batch[0]!, "period_label", "week_label", "chart_name", "source") ?? null;
-  return { meta: { label }, items, newEntries, moversUp, moversDown };
+  const fetchDate = extractFetchDate(batch);
+  return { meta: { label, fetchDate }, items, newEntries, moversUp, newOnChart };
 }
 
 export type SteamUpcomingDbItem = {
@@ -317,13 +330,13 @@ function rowToSteamUpcoming(r: Row): SteamUpcomingDbItem | null {
   };
 }
 
-export async function loadSteamUpcomingPopularFromSupabase(): Promise<{ items: SteamUpcomingDbItem[] } | null> {
+export async function loadSteamUpcomingPopularFromSupabase(): Promise<{ items: SteamUpcomingDbItem[]; fetchDate: string | null } | null> {
   const raw = await fetchAllRowsCached("steam_upcoming_popular", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const items = sortByRank(batch).map(rowToSteamUpcoming).filter((x): x is SteamUpcomingDbItem => x != null);
   if (!items.length) return null;
-  return { items };
+  return { items, fetchDate: extractFetchDate(batch) };
 }
 
 export type SteamNewDbItem = {
@@ -395,54 +408,56 @@ function mergeSteamBriefNew(item: SteamNewDbItem, b: SteamAppBrief | undefined):
   };
 }
 
-export async function loadSteamMonthlyTopNewFromSupabase(): Promise<{ items: SteamNewDbItem[] } | null> {
+export async function loadSteamMonthlyTopNewFromSupabase(): Promise<{ items: SteamNewDbItem[]; fetchDate: string | null } | null> {
   const raw = await fetchAllRowsCached("steam_monthly_top_new", 800);
   if (!raw.length) return null;
   const batch = pickLatestBatch(raw);
   const items = sortByRank(batch).map(rowToSteamNew).filter((x): x is SteamNewDbItem => x != null);
   if (!items.length) return null;
-  return { items };
+  return { items, fetchDate: extractFetchDate(batch) };
 }
 
 /** 周报页合并一次 appdetails 结果，避免三块数据各打一遍 Steam */
 export function attachSteamAppBriefToWeeklyReport(
   report: {
-    meta: { label: string | null };
+    meta: { label: string | null; fetchDate: string | null };
     items: SteamWeeklyDbItem[];
     newEntries: SteamWeeklyDbItem[];
     moversUp: SteamWeeklyDbItem[];
-    moversDown: SteamWeeklyDbItem[];
+    newOnChart: SteamWeeklyDbItem[];
   },
   map: Map<number, SteamAppBrief>,
 ): {
-  meta: { label: string | null };
+  meta: { label: string | null; fetchDate: string | null };
   items: SteamWeeklyDbItem[];
   newEntries: SteamWeeklyDbItem[];
   moversUp: SteamWeeklyDbItem[];
-  moversDown: SteamWeeklyDbItem[];
+  newOnChart: SteamWeeklyDbItem[];
 } {
   const merged = report.items.map((it) => (it.appid ? mergeSteamBriefWeekly(it, map.get(it.appid)) : it));
   const newEntries = merged.filter((it) => it.isNewEntry);
   const movers = merged.filter((it) => typeof it.rankDelta === "number" && it.rankDelta !== 0);
   const moversUp = [...movers].sort((a, b) => (b.rankDelta ?? 0) - (a.rankDelta ?? 0)).slice(0, 5);
-  const moversDown = [...movers].sort((a, b) => (a.rankDelta ?? 0) - (b.rankDelta ?? 0)).slice(0, 5);
-  return { ...report, items: merged, newEntries, moversUp, moversDown };
+  const newOnChart = merged.filter((it) => it.weeksOnChart === 1);
+  return { ...report, items: merged, newEntries, moversUp, newOnChart };
 }
 
 export function attachSteamAppBriefToUpcoming(
-  data: { items: SteamUpcomingDbItem[] },
+  data: { items: SteamUpcomingDbItem[]; fetchDate: string | null },
   map: Map<number, SteamAppBrief>,
-): { items: SteamUpcomingDbItem[] } {
+): { items: SteamUpcomingDbItem[]; fetchDate: string | null } {
   return {
+    ...data,
     items: data.items.map((it) => (it.appid ? mergeSteamBriefUpcoming(it, map.get(it.appid)) : it)),
   };
 }
 
 export function attachSteamAppBriefToMonthlyNew(
-  data: { items: SteamNewDbItem[] },
+  data: { items: SteamNewDbItem[]; fetchDate: string | null },
   map: Map<number, SteamAppBrief>,
-): { items: SteamNewDbItem[] } {
+): { items: SteamNewDbItem[]; fetchDate: string | null } {
   return {
+    ...data,
     items: data.items.map((it) => (it.appid ? mergeSteamBriefNew(it, map.get(it.appid)) : it)),
   };
 }
@@ -591,6 +606,7 @@ export type EpicFreeGame = {
   epic_store_url: string | null;
   startAt: string | null;
   endAt: string | null;
+  tags: string[];
 };
 
 function rowToEpicFreeGame(r: Row, fallbackRank: number): EpicFreeGame | null {
@@ -604,6 +620,7 @@ function rowToEpicFreeGame(r: Row, fallbackRank: number): EpicFreeGame | null {
     epic_store_url: str(r, "epic_store_url", "store_url", "url"),
     startAt: str(r, "promo_start"),
     endAt: str(r, "promo_end"),
+    tags: genresFromRow(r),
   };
 }
 
@@ -664,6 +681,86 @@ function rowToTap(r: Row): TapGame | null {
     store_url: str(r, "store_url", "url", "link"),
     test_status: str(r, "test_status", "status", "phase"),
   };
+}
+
+/* ──────────────────────────────────────────
+   pc_weekly_news_digest — 每周新闻摘要
+   ────────────────────────────────────────── */
+
+export type NewsDigestItem = {
+  id: string;
+  reportDate: string;
+  category: string;
+  summary: string;
+  sourceTitle: string;
+  sourceLink: string | null;
+  sourceDate: string | null;
+};
+
+export type NewsDigestResult = {
+  batchId: string | null;
+  categories: Array<{
+    category: string;
+    items: NewsDigestItem[];
+  }>;
+};
+
+export async function loadNewsDigestFromSupabase(): Promise<NewsDigestResult | null> {
+  const supabase = tryCreateSupabaseServiceClient();
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("pc_weekly_news_digest")
+      .select("id,report_date,summary,category,source_title,source_link,source_date,batch_id,created_at")
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (error || !data?.length) return null;
+
+    const rows = data as unknown as Row[];
+
+    // 取最新一批（按 batch_id 分组，取字典序最大的）
+    let maxBatch = "";
+    for (const r of rows) {
+      const b = str(r, "batch_id") ?? "";
+      if (b > maxBatch) maxBatch = b;
+    }
+    const batch = maxBatch ? rows.filter((r) => str(r, "batch_id") === maxBatch) : rows;
+
+    // 按 category 分组，保持固定顺序
+    const categoryOrder = ["平台异动", "厂商异动", "游戏异动", "试玩评测", "独立游戏亮点"];
+    const grouped = new Map<string, NewsDigestItem[]>();
+
+    for (const r of batch) {
+      const cat = str(r, "category") ?? "其他";
+      const item: NewsDigestItem = {
+        id: str(r, "id") ?? "",
+        reportDate: str(r, "report_date") ?? "",
+        category: cat,
+        summary: str(r, "summary") ?? "",
+        sourceTitle: str(r, "source_title") ?? "",
+        sourceLink: str(r, "source_link"),
+        sourceDate: str(r, "source_date"),
+      };
+      if (!grouped.has(cat)) grouped.set(cat, []);
+      grouped.get(cat)!.push(item);
+    }
+
+    const categories = categoryOrder
+      .filter((c) => grouped.has(c))
+      .map((c) => ({ category: c, items: grouped.get(c)! }));
+
+    // 把不在固定顺序里的分类追加到末尾
+    for (const [c, items] of grouped) {
+      if (!categoryOrder.includes(c)) {
+        categories.push({ category: c, items });
+      }
+    }
+
+    if (!categories.length) return null;
+    return { batchId: maxBatch || null, categories };
+  } catch {
+    return null;
+  }
 }
 
 export async function loadTapTapTableFromSupabase(table: "taptap_hot_download" | "taptap_test_hot"): Promise<{

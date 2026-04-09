@@ -14,26 +14,35 @@ import {
   loadSteamWeeklyTopsellersFromSupabase,
   loadTapTapTableFromSupabase,
   loadWeGameTableFromSupabase,
+  loadNewsDigestFromSupabase,
 } from "@/lib/report/supabaseReportData";
 import { fetchSteamAppsBrief, type SteamAppBrief } from "@/lib/steam/appDetails";
-import { BrowserSharePie } from "./BrowserSharePie";
 import { SharePie } from "./SharePie";
+import { SectionShell, RankBadge } from "./ui";
 import { WeGameSection } from "./WeGameSection";
+import { PlatformNav } from "./PlatformNav";
+import { ExpandableList } from "./ExpandableList";
 import type { ReactNode } from "react";
 
-/** 每次请求拉最新 Supabase 数据，避免静态化把空数据焊进 HTML */
 export const dynamic = "force-dynamic";
 
-function formatYmd(iso: string) {
-  const d = new Date(iso);
-  if (!Number.isFinite(d.getTime())) return "—";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+/* ============================================
+   工具函数
+   ============================================ */
+function sharesRecordToArray(shares: Record<string, number> | null | undefined) {
+  return Object.entries(shares || {}).map(([name, value]) => ({ name, value: Number(value) }));
 }
 
-/** 列表元数据、摘要「更新」等文案只展示本地日历日期 */
+function extractWeekPill(label: string | null | undefined): string | null {
+  const s = (label || "").trim();
+  if (!s) return null;
+  const m1 = s.match(/(\d{4})\s*[-/.\s]?\s*W(\d{1,2})/i);
+  if (m1) return `${m1[1]} W${String(m1[2]).padStart(2, "0")}`;
+  const m2 = s.match(/(\d{4}).*第\s*(\d{1,2})\s*周/);
+  if (m2) return `${m2[1]} W${String(m2[2]).padStart(2, "0")}`;
+  return null;
+}
+
 function dateOnlyLabel(raw: string | null | undefined): string {
   if (raw == null || String(raw).trim() === "") return "—";
   const s = String(raw).trim();
@@ -49,39 +58,105 @@ function dateOnlyLabel(raw: string | null | undefined): string {
   return s;
 }
 
-function Arrow({ delta }: { delta: number | null }) {
-  // 固定宽度占位，避免「↑/↓/→0/空」导致每行对不齐
-  const base =
-    "ml-2 inline-flex h-7 min-w-9 items-center justify-center rounded-md px-1.5 text-[11px] font-semibold tabular-nums";
-  if (delta == null) return <span className={`${base} opacity-0`}>—</span>;
-  if (delta > 0) return <span className={`${base} bg-emerald-50 text-emerald-700`}>↑{delta}</span>;
-  if (delta < 0) return <span className={`${base} bg-rose-50 text-rose-700`}>↓{Math.abs(delta)}</span>;
-  return <span className={`${base} bg-zinc-100 text-zinc-600`}>→0</span>;
+function formatMoney(amount: number, currency: string | null | undefined): string {
+  const c = (currency || "").trim().toUpperCase();
+  const symbol = c === "CNY" ? "¥" : c === "USD" ? "$" : c === "EUR" ? "€" : c === "GBP" ? "£" : null;
+  const fixed = Number.isFinite(amount) ? amount.toFixed(2).replace(/\.00$/, "") : String(amount);
+  return symbol ? `${symbol}${fixed}` : c ? `${fixed} ${c}` : fixed;
 }
 
-function SteamAppLink({
-  appid,
-  className,
-  children,
-}: {
-  appid: number | null | undefined;
-  className?: string;
-  children: ReactNode;
-}) {
-  if (!appid) return <span className={className}>{children}</span>;
+function isFreeText(input: unknown): boolean {
+  const s = String(input ?? "").trim();
+  if (!s) return false;
+  const n = s.replace(/\s+/g, "").replace(/[（()）]/g, "");
+  return n === "免费" || n === "免费下载" || n.includes("免费");
+}
+
+function normalizeCoverUrl(input: string | null | undefined): string | null {
+  const raw = input?.trim();
+  if (!raw) return null;
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (raw.startsWith("http://")) return `https://${raw.slice("http://".length)}`;
+  const m = raw.match(/^(https?:\/\/.+?\.(?:png|jpe?g|webp|gif))(?:[/?#].*)?$/i);
+  if (m) return m[1]!;
+  return raw;
+}
+
+/* ============================================
+   UI 原子组件
+   ============================================ */
+
+/** 排名变化箭头 */
+function Arrow({ delta }: { delta: number | null }) {
+  if (delta == null) return null;
+  if (delta > 0)
+    return (
+      <span className="inline-flex items-center gap-0.5 font-mono text-[11px] font-semibold tabular-nums"
+        style={{ color: "var(--color-rise)" }}>
+        +{delta}
+      </span>
+    );
+  if (delta < 0)
+    return (
+      <span className="inline-flex items-center gap-0.5 font-mono text-[11px] font-semibold tabular-nums"
+        style={{ color: "var(--color-drop)" }}>
+        {delta}
+      </span>
+    );
   return (
-    <a
-      className={className}
-      href={`https://store.steampowered.com/app/${appid}/`}
-      target="_blank"
-      rel="noreferrer"
-    >
-      {children}
-    </a>
+    <span className="inline-flex items-center gap-0.5 font-mono text-[11px] tabular-nums text-text-muted">
+      —
+    </span>
   );
 }
 
-function ExternalStoreLink({
+/** 免费标签 — 统一 icon 样式，不接受自定义文案 */
+function FreePill() {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold tracking-wide"
+      style={{
+        background: "var(--color-free-soft)",
+        color: "var(--color-free)",
+        border: "1px solid var(--color-free-border)",
+        borderRadius: "2px",
+      }}>
+      免费
+    </span>
+  );
+}
+
+/** 折扣标签 */
+function DiscountTag({ percent }: { percent: number }) {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums"
+      style={{
+        background: "var(--color-discount-soft)",
+        color: "var(--color-discount)",
+        border: "1px solid var(--color-discount-border)",
+        borderRadius: "2px",
+      }}>
+      -{percent}%
+    </span>
+  );
+}
+
+/** 新上榜标签 */
+function NewTag() {
+  return (
+    <span className="inline-flex items-center px-1 py-px text-[9px] font-bold tracking-wider uppercase leading-none"
+      style={{
+        background: "var(--color-new-soft)",
+        color: "var(--color-new)",
+        border: "1px solid var(--color-new-border)",
+        borderRadius: "2px",
+      }}>
+      NEW
+    </span>
+  );
+}
+
+/** 外部链接 */
+function ExternalLink({
   href,
   className,
   children,
@@ -93,108 +168,117 @@ function ExternalStoreLink({
   const u = href?.trim();
   if (!u) return <span className={className}>{children}</span>;
   return (
-    <a className={className} href={u} target="_blank" rel="noreferrer">
+    <a
+      className={className}
+      href={u}
+      target="_blank"
+      rel="noreferrer"
+    >
       {children}
     </a>
   );
 }
 
-function normalizeCoverUrl(input: string | null | undefined): string | null {
-  const raw = input?.trim();
-  if (!raw) return null;
-  if (raw.startsWith("//")) return `https:${raw}`;
-  if (raw.startsWith("http://")) return `https://${raw.slice("http://".length)}`;
-  // TapTap 等站点偶尔会把图片后面再拼一段路径（形如 *.jpg/_tap_banner.jpg），会导致 404
-  const m = raw.match(/^(https?:\/\/.+?\.(?:png|jpe?g|webp|gif))(?:[/?#].*)?$/i);
-  if (m) return m[1]!;
-  const m2 = raw.match(/^(https?:\/\/.+?\.(?:png|jpe?g|webp|gif))\/.+$/i);
-  if (m2) return m2[1]!;
-  return raw;
-}
-
-/** 与 Steam 榜单行一致的布局：排名 + 封面位 + 标题链接 + 副标题 + 右侧价格区 */
-function ChartListRow({
+/** 
+ * 榜单行 — 编辑排版风格
+ * 用底部细线分隔，不用卡片
+ */
+function ChartRow({
   rank,
+  rankDelta,
   coverUrl,
   title,
   titleHref,
+  titleExtra,
   subtitle,
   priceMain,
   priceExtra,
+  staggerIndex,
+  compact,
 }: {
   rank: number;
+  rankDelta?: number | null;
   coverUrl?: string | null;
   title: string;
   titleHref?: string | null;
+  titleExtra?: ReactNode;
   subtitle: string;
   priceMain: ReactNode;
   priceExtra?: ReactNode;
+  staggerIndex?: number;
+  /** compact 模式：用于双栏并列时，缩小封面和价格列宽 */
+  compact?: boolean;
 }) {
   const cover = normalizeCoverUrl(coverUrl);
-  const thumb = cover ? (
-    <img
-      src={cover}
-      alt={title}
-      className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
-      loading="lazy"
-      referrerPolicy="no-referrer"
-    />
-  ) : (
-    <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" aria-hidden />
-  );
-  const titleNode = (
-    <ExternalStoreLink href={titleHref} className="truncate text-[15px] font-semibold text-zinc-900 hover:underline">
-      {title}
-    </ExternalStoreLink>
-  );
-  const priceBlock = (
-    <div className="w-16 shrink-0 tabular-nums text-zinc-700 flex flex-col items-center">
-      <div className="text-sm font-semibold text-zinc-900 text-center">{priceMain}</div>
-      {priceExtra ? <div className="mt-1 flex justify-center w-full">{priceExtra}</div> : null}
-    </div>
-  );
+
   return (
-    <div className="hover:bg-zinc-50/60">
-      <div className="flex flex-col gap-3 px-4 py-3 sm:hidden">
-        <div className="flex items-start gap-3">
-          <div className="tabular-nums pt-0.5">
-            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-              #{rank}
-            </span>
-          </div>
-          {thumb}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">{titleNode}</div>
-            <div className="mt-0.5 truncate text-[12px] text-zinc-500">{subtitle}</div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-3">{priceBlock}</div>
+    <div
+      className={`grid items-center py-3 border-b border-border-light row-hover group animate-row-in ${
+        compact
+          ? "grid-cols-[1.5rem_36px_1fr_auto] gap-2"
+          : "grid-cols-[1.75rem_40px_1fr_auto] sm:grid-cols-[1.75rem_48px_1fr_5.5rem] gap-3 sm:gap-4 sm:py-3.5"
+      }`}
+      style={{ "--stagger": staggerIndex ?? 0 } as React.CSSProperties}
+    >
+      {/* 排名 */}
+      <div className="flex justify-center">
+        <RankBadge rank={rank} />
       </div>
-      <div className="hidden sm:flex items-center gap-4 px-4 py-3">
-        <div className="tabular-nums">
-          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-            #{rank}
+
+      {/* 封面 */}
+      <div
+        className={`overflow-hidden bg-bg-surface ${
+          compact ? "h-9 w-9" : "h-10 w-10 sm:h-12 sm:w-12"
+        }`}
+        style={{ borderRadius: "2px" }}
+      >
+        {cover ? (
+          <img
+            src={cover}
+            alt={title}
+            className="h-full w-full object-cover cover-zoom"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-text-muted text-xs">—</div>
+        )}
+      </div>
+
+      {/* 标题 */}
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <ExternalLink
+            href={titleHref}
+            className={`truncate font-medium text-text-primary hover:text-text-accent transition-colors duration-150 ${
+              compact ? "text-[13px]" : "text-sm"
+            }`}
+          >
+            {title}
+          </ExternalLink>
+          <span className="shrink-0 flex items-center gap-1">
+            {titleExtra}
+            {typeof rankDelta === "number" ? <Arrow delta={rankDelta} /> : null}
           </span>
         </div>
-        {thumb}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">{titleNode}</div>
-          <div className="mt-0.5 truncate text-[12px] text-zinc-500">{subtitle}</div>
-        </div>
-        {priceBlock}
+        <p className="mt-0.5 truncate text-xs text-text-muted">{subtitle}</p>
+      </div>
+
+      {/* 价格 */}
+      <div className="text-right tabular-nums whitespace-nowrap pl-2">
+        <div className={`font-medium text-text-primary ${compact ? "text-[13px]" : "text-sm"}`}>{priceMain}</div>
+        {priceExtra ? <div className="mt-1 flex justify-end">{priceExtra}</div> : null}
       </div>
     </div>
   );
 }
 
-function formatMoney(amount: number, currency: string | null | undefined): string {
-  const c = (currency || "").trim().toUpperCase();
-  const symbol = c === "CNY" ? "¥" : c === "USD" ? "$" : c === "EUR" ? "€" : c === "GBP" ? "£" : null;
-  const fixed = Number.isFinite(amount) ? amount.toFixed(2).replace(/\.00$/, "") : String(amount);
-  return symbol ? `${symbol}${fixed}` : c ? `${fixed} ${c}` : fixed;
-}
 
+/* ============================================
+   主页面
+   ============================================ */
 export default async function ReportPage() {
+  /* ---------- 数据获取（不变） ---------- */
   let browserShare: Awaited<ReturnType<typeof getLatestBrowserShare>> = null;
   let pcShipments: Awaited<ReturnType<typeof getLatestPcShipmentsQuarterly>> = null;
   let searchShare: Awaited<ReturnType<typeof getLatestSearchEngineShare>> = null;
@@ -204,24 +288,15 @@ export default async function ReportPage() {
       getLatestPcShipmentsQuarterly(),
       getLatestSearchEngineShare(),
     ]);
-  } catch {
-    /* 已由 staticSeries 内部兜底；此处防止 Promise.all 因未捕获的 reject 打挂整页 */
-  }
+  } catch { /* 兜底 */ }
+
   const [
-    steamWeekly,
-    steamUpcoming,
-    steamMonthlyNew,
-    steamUpdatesSummary,
-    summary4399,
-    summary4399New,
-    epicTop,
-    epicMostPlayed,
-    epicFree,
-    wgBestseller,
-    wgPurchase,
-    wgFollow,
-    tapHot,
-    tapTest,
+    steamWeekly, steamUpcoming, steamMonthlyNew, steamUpdatesSummary,
+    summary4399, summary4399New,
+    epicTop, epicMostPlayed, epicFree,
+    wgBestseller, wgPurchase, wgFollow,
+    tapHot, tapTest,
+    newsDigest,
   ] = await Promise.all([
     loadSteamWeeklyTopsellersFromSupabase(),
     loadSteamUpcomingPopularFromSupabase(),
@@ -237,953 +312,856 @@ export default async function ReportPage() {
     loadWeGameTableFromSupabase("wegame_follow"),
     loadTapTapTableFromSupabase("taptap_hot_download"),
     loadTapTapTableFromSupabase("taptap_test_hot"),
+    loadNewsDigestFromSupabase(),
   ]);
 
   const steamAppIds = new Set<number>();
-  for (const it of steamWeekly?.items ?? []) {
-    if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
-  }
-  for (const it of steamUpcoming?.items ?? []) {
-    if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
-  }
-  for (const it of steamMonthlyNew?.items ?? []) {
-    if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
-  }
+  for (const it of steamWeekly?.items ?? []) if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
+  for (const it of steamUpcoming?.items ?? []) if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
+  for (const it of steamMonthlyNew?.items ?? []) if (it.appid && it.appid > 0) steamAppIds.add(it.appid);
+
   let steamBriefMap = new Map<number, SteamAppBrief>();
   if (steamAppIds.size > 0) {
-    try {
-      steamBriefMap = await fetchSteamAppsBrief([...steamAppIds], { cc: "CN", l: "schinese" });
-    } catch {
-      /* 限流/网络失败时仅用 Supabase 兜底 */
-    }
+    try { steamBriefMap = await fetchSteamAppsBrief([...steamAppIds], { cc: "CN", l: "schinese" }); } catch { /* fallback */ }
   }
+
   const steamWeeklyEnriched = steamWeekly ? attachSteamAppBriefToWeeklyReport(steamWeekly, steamBriefMap) : null;
   const steamUpcomingEnriched = steamUpcoming ? attachSteamAppBriefToUpcoming(steamUpcoming, steamBriefMap) : null;
   const steamMonthlyNewEnriched = steamMonthlyNew ? attachSteamAppBriefToMonthlyNew(steamMonthlyNew, steamBriefMap) : null;
 
-  const epicCharts =
-    epicTop || epicMostPlayed
-      ? {
-          meta: {
-            fetchDate: epicTop?.fetchDate ?? epicMostPlayed?.fetchDate ?? null,
-          },
-          topSellers: epicTop?.games ?? [],
-          mostPlayed: epicMostPlayed?.games ?? [],
-        }
-      : null;
+  const epicCharts = epicTop || epicMostPlayed ? {
+    meta: { fetchDate: epicTop?.fetchDate ?? epicMostPlayed?.fetchDate ?? null },
+    topSellers: epicTop?.games ?? [],
+    mostPlayed: epicMostPlayed?.games ?? [],
+  } : null;
 
-  /** 与 `tryCreateSupabaseServiceClient` 一致：缺任一项则服务端不会查库，榜单会全部「暂无数据」 */
-  const supabaseServerConfigured =
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
-    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
-
-  // ===== 国内 PC 保有量（年）口径：按家庭户数推算（家用电脑在用量估算）=====
-  // 口径：家庭户数 ×（每百户拥有计算机台数 / 100）
-  // 来源：统计年鉴 2025（披露到 2024 年末）
+  /* ---------- 国内 PC 保有量 ---------- */
   const estPcInUse = (() => {
-    const households = 548_557_000; // 全国家庭户（户），2024年；来源 C02-09（单位：千户）
-    const computersPer100 = 44.8; // 全国居民平均每百户计算机（台/百户），2024年末；来源 C06-05
+    const households = 548_557_000;
+    const computersPer100 = 44.8;
     const value = households * (computersPer100 / 100);
     return { year: 2024, households, computersPer100, value };
   })();
   const estPcInUseYi = (estPcInUse.value / 1e8).toFixed(2);
 
-  const shipmentsLabelMap = {
-    Lenovo: "联想",
-    Huawei: "华为",
-    HP: "惠普",
-    iSoftStone: "软通动力",
-    Asus: "华硕",
-    Others: "其他",
-  } as Record<string, string>;
+  const shipmentsLabelMap = { Lenovo: "联想", Huawei: "华为", HP: "惠普", iSoftStone: "软通动力", Asus: "华硕", Others: "其他" } as Record<string, string>;
   const shipmentsPeriodLabel = pcShipments
-    ? (() => {
-        const d = new Date(pcShipments.quarter);
-        if (!Number.isFinite(d.getTime())) return pcShipments.quarter;
-        const q = Math.floor(d.getMonth() / 3) + 1;
-        return `${d.getFullYear()}年Q${q}`;
-      })()
+    ? (() => { const d = new Date(pcShipments.quarter); if (!Number.isFinite(d.getTime())) return pcShipments.quarter; const q = Math.floor(d.getMonth() / 3) + 1; return `${d.getFullYear()}年Q${q}`; })()
     : "未录入";
 
   const browserMonthLabel = browserShare
-    ? (() => {
-        const d = new Date(browserShare.month);
-        if (!Number.isFinite(d.getTime())) return browserShare.month;
-        return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-      })()
+    ? (() => { const d = new Date(browserShare.month); if (!Number.isFinite(d.getTime())) return browserShare.month; return `${d.getFullYear()}年${d.getMonth() + 1}月`; })()
     : "未录入";
 
-  const searchEngineLabelMap = {
-    bing: "必应",
-    Baidu: "百度",
-    Haosou: "好搜",
-    YANDEX: "Yandex",
-    Google: "Google",
-    Sogou: "搜狗",
-  } as Record<string, string>;
+  const searchEngineLabelMap = { bing: "必应", Baidu: "百度", Haosou: "好搜", YANDEX: "Yandex", Google: "Google", Sogou: "搜狗" } as Record<string, string>;
   const searchMonthLabel = searchShare
-    ? (() => {
-        const d = new Date(searchShare.month);
-        if (!Number.isFinite(d.getTime())) return searchShare.month;
-        return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-      })()
+    ? (() => { const d = new Date(searchShare.month); if (!Number.isFinite(d.getTime())) return searchShare.month; return `${d.getFullYear()}年${d.getMonth() + 1}月`; })()
     : "未录入";
+
+  const reportLabel = steamWeeklyEnriched?.meta.label ?? null;
+  const weekPill = extractWeekPill(reportLabel);
+
+  // 从 Steam 表最新 batch 的 fetchDate 提取更新日期
+  const dataUpdateDate = (() => {
+    const raw = steamWeeklyEnriched?.meta.fetchDate ?? null;
+    if (!raw) return null;
+    const d = new Date(raw);
+    if (!Number.isFinite(d.getTime())) return null;
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+  })();
 
   return (
-    <div className="min-h-dvh bg-zinc-50 text-zinc-900">
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        {!supabaseServerConfigured ? (
-          <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            <p className="font-medium">未连接 Supabase（服务端读库未配置）</p>
-            <p className="mt-1 text-amber-900/90">
-              在 <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">pc-game-weekly/.env.local</code> 填写{" "}
-              <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_URL</code> 与{" "}
-              <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">SUPABASE_SERVICE_ROLE_KEY</code>
-              （Dashboard 里 <span className="whitespace-nowrap">Project Settings → API</span> 的{" "}
-              <span className="font-medium">service_role</span>，不要用 anon 代替）。保存后务必重启{" "}
-              <code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">npm run dev</code>。
-            </p>
-          </div>
-        ) : null}
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-xs font-medium text-zinc-600">综合周报（自动生成）</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">PC 行业周报</h1>
-            {steamWeeklyEnriched ? (
-              <p className="mt-3 text-sm text-zinc-600">
-                数据来自 Supabase 表 <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">steam_weekly_topsellers</code>
-                {steamWeeklyEnriched.meta.label ? ` · ${steamWeeklyEnriched.meta.label}` : ""}
+    <div className="min-h-dvh">
+      {/* Sticky 平台导航 — 独立于内容流 */}
+      <PlatformNav />
+
+      <main className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-12 pt-4 pb-12 sm:pt-6 sm:pb-16">
+
+        {/* ========================================================
+            报头 — 杂志封面式
+            ======================================================== */}
+        <header className="animate-reveal" style={{ animationFillMode: "backwards" }}>
+          {/* 顶部粗线 */}
+          <div className="rule-heavy mb-6" />
+
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-8">
+            <div className="min-w-0">
+              {/* 大标题 — 衬线体，戏剧性 */}
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-none">
+                PC 游戏
+                <br />
+                <span className="font-editorial text-text-accent">行业周报</span>
+              </h1>
+              <p className="mt-4 text-sm text-text-muted max-w-md leading-relaxed">
+                {reportLabel || "聚合 Steam · Epic · WeGame · TapTap · 4399 五大平台数据"}
               </p>
-            ) : (
-              <p className="mt-3 text-sm text-rose-700">
-                暂无 Steam 每周畅销数据：请确认表中有数据，且含 rank / name（或 title）等列。
-              </p>
+            </div>
+
+            {/* 右侧：更新日期 & 周次标记 */}
+            {(weekPill || dataUpdateDate) && (
+              <div className="shrink-0 text-right sm:text-right flex flex-col items-end gap-1.5">
+                {weekPill && (
+                  <div className="font-mono text-3xl sm:text-4xl font-bold tabular-nums text-text-primary tracking-tighter">
+                    {weekPill}
+                  </div>
+                )}
+                {dataUpdateDate && (
+                  <div className="header-update-date">
+                    <span className="header-update-date-label">更新时间：</span>
+                    <span className="header-update-date-value">{dataUpdateDate}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        </div>
 
-        <div className="mt-10 rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="text-xs font-medium text-zinc-500">国内 PC 保有量（年）</div>
-            <div className="group relative shrink-0">
-              <button
-                type="button"
-                className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-200"
-              >
-                推算方法
-                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-zinc-100 text-[10px] font-semibold text-zinc-600">
-                  i
-                </span>
-              </button>
-              <div className="absolute right-0 top-7 z-10 hidden w-[320px] rounded-xl border border-zinc-200 bg-white p-4 text-xs text-zinc-700 shadow-lg group-hover:block group-focus-within:block">
-                <div className="font-semibold text-zinc-900">推算方法</div>
-                <div className="mt-2 space-y-1 leading-relaxed">
-                  <div>公式： 家庭户数 ×（每百户计算机 / 100）</div>
-                  <div className="text-zinc-600">
-                    代入：{(estPcInUse.households / 1e6).toFixed(3)} 百万户 ×（{estPcInUse.computersPer100} / 100）
-                  </div>
-                  <div className="text-zinc-600">
-                    结果：约 {(estPcInUse.value / 1e6).toFixed(3)} 百万台（≈ {estPcInUseYi} 亿台）
-                  </div>
-                </div>
-                <div className="mt-3 border-t border-zinc-100 pt-3 space-y-1">
-                  <div className="text-zinc-500">数据源（国家统计年鉴 2025）：</div>
-                  <div className="flex flex-col gap-1">
-                    <a
-                      className="truncate text-blue-600 hover:underline"
-                      href="https://www.stats.gov.cn/sj/ndsj/2025/html/C02-09.jpg"
-                      target="_blank"
-                      rel="noreferrer"
-                      title="C02-09 分地区户数、人口数、性别比和户规模(2024年)"
-                    >
-                      C02-09（家庭户数）
-                    </a>
-                    <a
-                      className="truncate text-blue-600 hover:underline"
-                      href="https://www.stats.gov.cn/sj/ndsj/2025/html/C06-05.jpg"
-                      target="_blank"
-                      rel="noreferrer"
-                      title="C06-05 全国居民平均每百户年末主要耐用消费品拥有量"
-                    >
-                      C06-05（每百户计算机）
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-semibold">{estPcInUseYi} 亿台</div>
-          <div className="mt-1 text-xs text-zinc-500">数据时间：{estPcInUse.year} 年末（估算）</div>
-        </div>
+          {/* 细双线收尾 */}
+          <div className="rule-double mt-6" />
+        </header>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-zinc-200 bg-white p-6">
-            <div className="text-xs font-medium text-zinc-500">国内 PC 出货量（季度）</div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
-              <span>
-                数据时间： <span className="font-medium text-zinc-900">{shipmentsPeriodLabel}</span>
-              </span>
-              <span>
-                总出货量：{" "}
-                <span className="font-medium text-zinc-900">
-                  {pcShipments ? Number(pcShipments.total_million_units).toLocaleString() : "—"}
-                </span>{" "}
-                百万台
-              </span>
-              <span>
-                品牌数：{" "}
-                <span className="font-medium text-zinc-900">
-                  {pcShipments ? Object.keys(pcShipments.shares || {}).length : 0}
-                </span>
-              </span>
-            </div>
-            <div className="mt-5">
-              {pcShipments ? (
-                <SharePie
-                  variant="full"
-                  layout="sideBySide"
-                  shares={pcShipments.shares}
-                  labelMap={shipmentsLabelMap}
-                  pinLast={["Others"]}
-                />
-              ) : (
-                <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                  暂无数据
-                </div>
-              )}
-            </div>
-            <div className="mt-4 text-xs text-zinc-500">
-              数据源：
-              {pcShipments?.source ? (
-                <a
-                  className="ml-1 inline-block max-w-full truncate align-bottom text-blue-600 hover:underline"
-                  href={pcShipments.source}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={pcShipments.source}
+        {/* ========================================================
+            每周新闻 — 核心要点速览
+            ======================================================== */}
+        <SectionShell id="section-news" colorVar="--color-news" title="每周新闻" className="!mt-4 !pt-4"
+          pill={<span className="font-mono text-xs text-text-muted tabular-nums">{weekPill}</span>}
+        >
+          {newsDigest && newsDigest.categories.length > 0 ? (
+            <div>
+              {newsDigest.categories.map((cat, catIdx) => (
+                <div
+                  key={cat.category}
+                  className="news-category animate-row-in"
+                  style={{ "--stagger": catIdx } as React.CSSProperties}
                 >
-                  {pcShipments.note ?? pcShipments.source}
-                </a>
-              ) : (
-                <span className="ml-1">未填写</span>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-zinc-200 bg-white p-6">
-            <div className="text-xs font-medium text-zinc-500">PC 浏览器份额（月）</div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
-              <span>
-                数据时间： <span className="font-medium text-zinc-900">{browserMonthLabel}</span>
-              </span>
-              <span>
-                品牌数：{" "}
-                <span className="font-medium text-zinc-900">
-                  {browserShare ? Object.keys(browserShare.shares || {}).length : 0}
-                </span>
-              </span>
-            </div>
-            <div className="mt-5">
-              {browserShare ? (
-                <BrowserSharePie variant="full" layout="sideBySide" shares={browserShare.shares || {}} />
-              ) : (
-                <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                  暂无数据
-                </div>
-              )}
-            </div>
-            <div className="mt-4 text-xs text-zinc-500">
-              数据源：
-              {browserShare?.source ? (
-                <a
-                  className="ml-1 inline-block max-w-full truncate align-bottom text-blue-600 hover:underline"
-                  href={browserShare.source}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={browserShare.source}
-                >
-                  {browserShare.source}
-                </a>
-              ) : (
-                <span className="ml-1">未填写</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-zinc-200 bg-white p-6">
-            <div className="text-xs font-medium text-zinc-500">PC 搜索引擎份额（月）</div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
-              <span>
-                数据时间： <span className="font-medium text-zinc-900">{searchMonthLabel}</span>
-              </span>
-              <span>
-                品牌数：{" "}
-                <span className="font-medium text-zinc-900">
-                  {searchShare ? Object.keys(searchShare.shares || {}).length : 0}
-                </span>
-              </span>
-            </div>
-            <div className="mt-5">
-              {searchShare ? (
-                <SharePie
-                  variant="full"
-                  layout="sideBySide"
-                  shares={searchShare.shares}
-                  labelMap={searchEngineLabelMap}
-                />
-              ) : (
-                <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                  暂无数据
-                </div>
-              )}
-            </div>
-            <div className="mt-4 text-xs text-zinc-500">
-              数据源：
-              {searchShare?.source ? (
-                <a
-                  className="ml-1 inline-block max-w-full truncate align-bottom text-blue-600 hover:underline"
-                  href={searchShare.source}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={searchShare.source}
-                >
-                  {searchShare.note ?? searchShare.source}
-                </a>
-              ) : (
-                <span className="ml-1">未填写</span>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-6" />
-        </div>
-
-        <section className="mt-10">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 每周畅销榜</h2>
-            <span className="text-xs text-zinc-500">数据来自 Supabase；同批次按 fetched_at / updated_at 等时间列自动取最新一批</span>
-          </div>
-          {steamWeeklyEnriched ? (
-            <div className="grid gap-6">
-            <section>
-              <div className="mb-3 flex items-end justify-between">
-                <h3 className="text-base font-semibold">主榜</h3>
-                <div className="text-xs text-zinc-500">箭头为排名变化（若表中有 rank_delta / last_week_rank 等列）</div>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <div className="divide-y divide-zinc-100">
-                  {steamWeeklyEnriched.items.slice(0, 20).map((it) => (
-                    <div key={`${it.rank}-${it.name ?? it.appid ?? ""}`} className="hover:bg-zinc-50/60">
-                      <div className="flex flex-col gap-3 px-4 py-3 sm:hidden">
-                        <div className="flex items-start gap-3">
-                          <div className="tabular-nums pt-0.5">
-                            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-                              #{it.rank}
-                            </span>
-                            <Arrow delta={it.rankDelta} />
+                  {/* 分类标题 */}
+                  <div className="news-category-title">
+                    <span className="news-category-dot" />
+                    {cat.category}
+                  </div>
+                  {/* 新闻条目 */}
+                  <div>
+                    {cat.items.map((item, idx) => (
+                      <div
+                        key={item.id}
+                        className="news-item animate-row-in"
+                        style={{ "--stagger": catIdx * 4 + idx + 1 } as React.CSSProperties}
+                      >
+                        <span
+                          className="news-item-summary"
+                          dangerouslySetInnerHTML={{
+                            __html: item.summary
+                              .replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;")
+                              .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"),
+                          }}
+                        />
+                        {item.sourceLink ? (
+                          <div>
+                            <a
+                              href={item.sourceLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="news-source-link"
+                            >
+                              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6.5 3.5H3.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9.5" />
+                                <path d="M9.5 2.5h4v4" />
+                                <path d="M13.5 2.5 7.5 8.5" />
+                              </svg>
+                              {item.sourceTitle || "来源"}
+                            </a>
                           </div>
-                          {it.headerImage ? (
-                            <img
-                              src={it.headerImage}
-                              alt={it.name || `Steam Game ${it.appid ?? ""}`}
-                              className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <SteamAppLink
-                                appid={it.appid}
-                                className="truncate text-[15px] font-semibold text-zinc-900 hover:underline"
-                              >
-                                {it.name || (it.appid ? `App ${it.appid}` : "—")}
-                              </SteamAppLink>
-                              {it.isNewEntry ? (
-                                <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                                  新上榜
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                              {[
-                                it.genres.length ? it.genres.join(" · ") : "类型未知",
-                                typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="tabular-nums text-zinc-700">
-                            <div className="text-sm font-semibold text-zinc-900">{it.priceText || "-"}</div>
-                            {typeof it.discountPercent === "number" && it.discountPercent > 0 ? (
-                              <span className="mt-1 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                                -{it.discountPercent}%
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
+                        ) : item.sourceTitle ? (
+                          <span className="news-source-text">— {item.sourceTitle}</span>
+                        ) : null}
                       </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
-                      <div className="hidden sm:flex items-center gap-4 px-4 py-3">
-                        <div className="tabular-nums">
-                          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-                            #{it.rank}
-                          </span>
-                          <Arrow delta={it.rankDelta} />
-                        </div>
+              {/* 底部备注 */}
+              <div className="news-footer">新闻摘要来源于公开资讯，仅供参考</div>
+            </div>
+          ) : (
+            <div className="py-6 text-sm text-text-muted text-center">暂无本周新闻数据</div>
+          )}
+        </SectionShell>
+
+        {/* ========================================================
+            行业大盘 — 2×2 等宽网格
+            ======================================================== */}
+        <SectionShell id="section-overview" colorVar="--color-accent" title="行业大盘" className="!mt-4 !pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-light border border-border-light">
+            {/* ① 国内 PC 保有量 */}
+            <div className="bg-bg-base p-6 sm:p-8 flex flex-col justify-center min-h-[260px]">
+              <div className="editorial-label mb-3">国内 PC 保有量</div>
+              <div className="hero-number text-5xl tabular-nums animate-count-up" style={{ animationDelay: "0.1s", animationFillMode: "backwards" }}>
+                {estPcInUseYi}
+                <span className="text-xl font-normal text-text-secondary ml-1" style={{ fontFamily: "var(--font-body)" }}>亿台</span>
+              </div>
+              <div className="mt-2 text-xs text-text-muted">{estPcInUse.year} 年末估算</div>
+
+              <details className="mt-4 group">
+                <summary className="cursor-pointer text-xs text-text-muted hover:text-text-secondary transition-colors inline-flex items-center gap-1">
+                  <span className="border-b border-dashed border-current">推算方法</span>
+                </summary>
+                <div className="mt-2 pl-0 text-xs text-text-muted space-y-1 leading-relaxed">
+                  <div>家庭户数 × (每百户计算机 / 100)</div>
+                  <div>{(estPcInUse.households / 1e6).toFixed(1)}M 户 × ({estPcInUse.computersPer100}/100) ≈ {estPcInUseYi} 亿台</div>
+                  <div className="text-text-muted/70 pt-1">
+                    来源：
+                    <a href="https://www.stats.gov.cn/sj/ndsj/2025/html/C02-09.jpg" target="_blank" rel="noreferrer" className="text-text-accent hover:underline">C02-09</a>
+                    {" · "}
+                    <a href="https://www.stats.gov.cn/sj/ndsj/2025/html/C06-05.jpg" target="_blank" rel="noreferrer" className="text-text-accent hover:underline">C06-05</a>
+                    （统计年鉴 2025）
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            {/* ② PC 出货量份额 */}
+            <div className="bg-bg-base p-6 sm:p-8 min-h-[260px]">
+              <SharePie
+                title="PC 出货量份额"
+                subtitle={`${shipmentsPeriodLabel} · 总量 ${pcShipments ? Number(pcShipments.total_million_units).toLocaleString() : "—"}M`}
+                data={sharesRecordToArray(pcShipments?.shares)}
+                labelMap={shipmentsLabelMap}
+                source={pcShipments?.source ? `来源：${pcShipments.note ?? pcShipments.source}` : undefined}
+              />
+            </div>
+
+            {/* ③ PC 搜索引擎份额 */}
+            <div className="bg-bg-base p-6 sm:p-8 min-h-[260px]">
+              <SharePie
+                title="PC 搜索引擎份额"
+                subtitle={searchMonthLabel}
+                data={sharesRecordToArray(searchShare?.shares)}
+                labelMap={searchEngineLabelMap}
+                source={searchShare?.source ? `来源：${searchShare.note ?? searchShare.source}` : undefined}
+              />
+            </div>
+
+            {/* ④ PC 浏览器份额 */}
+            <div className="bg-bg-base p-6 sm:p-8 min-h-[260px]">
+              <SharePie
+                title="PC 浏览器份额"
+                subtitle={browserMonthLabel}
+                data={sharesRecordToArray(browserShare?.shares || {})}
+                labelMap={{ Chrome: "Chrome", Edge: "Edge", "360 Safe": "360浏览器", Safari: "Safari", "QQ Browser": "QQ浏览器", Firefox: "火狐" }}
+                source={browserShare?.source ? `来源：${browserShare.source}` : undefined}
+              />
+            </div>
+          </div>
+        </SectionShell>
+
+        {/* ========================================================
+            Steam — 一级分类
+            ======================================================== */}
+        <SectionShell
+          id="section-steam"
+          colorVar="--color-steam"
+          title="Steam"
+          pill={<span className="font-mono text-xs text-text-muted tabular-nums">{weekPill}</span>}
+        >
+          <div className="space-y-10">
+
+            {/* ── 每周畅销榜 ── */}
+            <div>
+              <div className="flex items-baseline justify-between mb-6">
+                <h3 className="font-display text-lg sm:text-xl font-bold text-text-primary">每周畅销榜</h3>
+                <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(steamWeeklyEnriched?.meta.fetchDate)}</span>
+              </div>
+              {steamWeeklyEnriched ? (
+                <div className="space-y-10">
+                  {/* 主榜 */}
+                  <div>
+                    <div className="editorial-label mb-4">主榜 Top 20</div>
+                    <div className="border-t-2 border-border-rule">
+                      <ExpandableList limit={5}>
+                        {steamWeeklyEnriched.items.slice(0, 20).map((it, idx) => {
+                          const subtitle = [
+                            it.genres.length ? it.genres.join(" · ") : "类型未知",
+                            typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                          ].filter(Boolean).join(" · ");
+
+                          return (
+                            <ChartRow
+                              key={`${it.rank}-${it.name ?? it.appid ?? ""}`}
+                              rank={it.rank}
+                              rankDelta={it.rankDelta}
+                              coverUrl={it.headerImage}
+                              title={it.name || (it.appid ? `App ${it.appid}` : "—")}
+                              titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                              titleExtra={it.weeksOnChart === 1 ? <NewTag /> : undefined}
+                              subtitle={subtitle}
+                              staggerIndex={idx}
+                              priceMain={isFreeText(it.priceText) ? <FreePill /> : (it.priceText || "—")}
+                              priceExtra={
+                                typeof it.discountPercent === "number" && it.discountPercent > 0
+                                  ? <DiscountTag percent={it.discountPercent} />
+                                  : undefined
+                              }
+                            />
+                          );
+                        })}
+                      </ExpandableList>
+                    </div>
+                  </div>
+
+                  {/* 涨跌 — 并列两栏 */}
+                  <div className="grid gap-6 sm:gap-10 sm:grid-cols-2 items-start">
+                    {/* 上升 */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-1.5 h-1.5" style={{ background: "var(--color-rise)", borderRadius: "1px" }} />
+                        <span className="editorial-label" style={{ color: "var(--color-rise)" }}>本周上升最多</span>
+                      </div>
+                      <div className="border-t border-border">
+                        {steamWeeklyEnriched.moversUp.length === 0 ? (
+                          <div className="py-6 text-sm text-text-muted text-center">暂无</div>
+                        ) : (
+                          <ExpandableList limit={5}>
+                            {steamWeeklyEnriched.moversUp.map((it, idx) => (
+                              <ChartRow
+                                key={`up-${it.appid ?? it.rank}`}
+                                rank={it.rank}
+                                rankDelta={it.rankDelta}
+                                coverUrl={it.headerImage}
+                                title={it.name || (it.appid ? `App ${it.appid}` : "—")}
+                                titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                                subtitle={[
+                                  it.genres.length ? it.genres.join(" · ") : "类型未知",
+                                  typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                                ].filter(Boolean).join(" · ")}
+                                staggerIndex={idx}
+                                priceMain={isFreeText(it.priceText) ? <FreePill /> : (it.priceText || "—")}
+                                priceExtra={
+                                  typeof it.discountPercent === "number" && it.discountPercent > 0
+                                    ? <DiscountTag percent={it.discountPercent} />
+                                    : undefined
+                                }
+                                compact
+                              />
+                            ))}
+                          </ExpandableList>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 本周新上榜 */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-1.5 h-1.5" style={{ background: "var(--color-new)", borderRadius: "1px" }} />
+                        <span className="editorial-label" style={{ color: "var(--color-new)" }}>本周新上榜</span>
+                      </div>
+                      <div className="border-t border-border">
+                        {steamWeeklyEnriched.newOnChart.length === 0 ? (
+                          <div className="py-6 text-sm text-text-muted text-center">本周暂无新上榜游戏</div>
+                        ) : (
+                          <ExpandableList limit={5}>
+                            {steamWeeklyEnriched.newOnChart.map((it, idx) => (
+                              <ChartRow
+                                key={`new-${it.appid ?? it.rank}`}
+                                rank={it.rank}
+                                rankDelta={it.rankDelta}
+                                coverUrl={it.headerImage}
+                                title={it.name || (it.appid ? `App ${it.appid}` : "—")}
+                                titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                                titleExtra={<NewTag />}
+                                subtitle={[
+                                  it.genres.length ? it.genres.join(" · ") : "类型未知",
+                                  typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
+                                ].filter(Boolean).join(" · ")}
+                                staggerIndex={idx}
+                                priceMain={isFreeText(it.priceText) ? <FreePill /> : (it.priceText || "—")}
+                                priceExtra={
+                                  typeof it.discountPercent === "number" && it.discountPercent > 0
+                                    ? <DiscountTag percent={it.discountPercent} />
+                                    : undefined
+                                }
+                                compact
+                              />
+                            ))}
+                          </ExpandableList>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-10 text-center text-sm text-text-muted">暂无数据</div>
+              )}
+            </div>
+
+            {/* ── 平台动态 ── */}
+            <div>
+              <h3 className="font-display text-lg sm:text-xl font-bold text-text-primary mb-6">平台动态</h3>
+              {steamUpdatesSummary ? (
+                <div className="max-w-3xl">
+                  {steamUpdatesSummary.title ? (
+                    <h4 className="text-base font-medium text-text-primary mb-1">{steamUpdatesSummary.title}</h4>
+                  ) : null}
+                  {steamUpdatesSummary.updatedAt ? (
+                    <p className="text-xs text-text-muted mb-4">更新：{dateOnlyLabel(steamUpdatesSummary.updatedAt)}</p>
+                  ) : null}
+                  <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words">
+                    {steamUpdatesSummary.body}
+                  </p>
+                  {steamUpdatesSummary.extra ? (
+                    <a
+                      href={steamUpdatesSummary.extra}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-text-accent mt-4 hover:underline"
+                    >
+                      查看详情 <span className="link-arrow">→</span>
+                    </a>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="py-10 text-center text-sm text-text-muted">暂无数据</div>
+              )}
+            </div>
+
+            {/* ── 即将推出 ── */}
+            <div>
+              <div className="flex items-baseline justify-between mb-6">
+                <h3 className="font-display text-lg sm:text-xl font-bold text-text-primary">即将推出</h3>
+                <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(steamUpcomingEnriched?.fetchDate)}</span>
+              </div>
+              {steamUpcomingEnriched?.items?.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border-light border border-border-light">
+                  {steamUpcomingEnriched.items.slice(0, 18).map((it, idx) => (
+                    <div
+                      key={`${it.rank}-${it.name}`}
+                      className="flex gap-3 p-4 bg-bg-base group animate-card-in"
+                      style={{ "--stagger": idx } as React.CSSProperties}
+                    >
+                      <div className="w-14 h-14 flex-shrink-0 overflow-hidden bg-bg-surface" style={{ borderRadius: "2px" }}>
                         {it.headerImage ? (
                           <img
                             src={it.headerImage}
-                            alt={it.name || `Steam Game ${it.appid ?? ""}`}
-                            className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
+                            alt={it.name}
+                            className="object-cover w-full h-full cover-zoom"
                             loading="lazy"
+                            referrerPolicy="no-referrer"
                           />
-                        ) : (
-                          <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <SteamAppLink
-                              appid={it.appid}
-                              className="truncate text-[15px] font-semibold text-zinc-900 hover:underline"
-                            >
-                              {it.name || (it.appid ? `App ${it.appid}` : "—")}
-                            </SteamAppLink>
-                            {it.isNewEntry ? (
-                              <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                                新上榜
-                              </span>
-                            ) : null}
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <ExternalLink
+                          href={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                          className="text-sm font-medium text-text-primary truncate block hover:text-text-accent transition-colors"
+                        >
+                          {it.name}
+                        </ExternalLink>
+                        {it.genres.length > 0 ? (
+                          <div className="flex gap-1 mt-0.5 overflow-hidden">
+                            {it.genres.slice(0, 3).map((t) => (
+                              <span key={t} className="inline-block px-1.5 py-px text-[10px] leading-tight rounded bg-bg-surface text-text-muted truncate max-w-[80px]">{t}</span>
+                            ))}
                           </div>
-                          <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                            {[
-                              it.genres.length ? it.genres.join(" · ") : "类型未知",
-                              typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </div>
-                        </div>
-                        <div className="tabular-nums text-zinc-700">
-                          <div className="text-sm font-semibold text-zinc-900">{it.priceText || "-"}</div>
-                          {typeof it.discountPercent === "number" && it.discountPercent > 0 ? (
-                            <span className="mt-1 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                              -{it.discountPercent}%
-                            </span>
+                        ) : null}
+                        <div className="mt-1.5 flex items-center gap-3 text-xs text-text-muted">
+                          <span>{it.releaseDateText || "日期待定"}</span>
+                          {typeof it.followers === "number" ? (
+                            <span className="font-mono tabular-nums">{(it.followers / 1000).toFixed(1)}K 关注</span>
                           ) : null}
                         </div>
                       </div>
                     </div>
                   ))}
+                  {/* 奇数项时补一个空白格，避免灰色背景露出 */}
+                  {steamUpcomingEnriched.items.slice(0, 18).length % 2 !== 0 && (
+                    <div className="hidden sm:block bg-bg-base" />
+                  )}
                 </div>
+              ) : (
+                <div className="py-10 text-center text-sm text-text-muted">暂无数据</div>
+              )}
+            </div>
+
+            {/* ── 月度新品 ── */}
+            <div>
+              <div className="flex items-baseline justify-between mb-6">
+                <h3 className="font-display text-lg sm:text-xl font-bold text-text-primary">月度新品</h3>
+                <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(steamMonthlyNewEnriched?.fetchDate)}</span>
               </div>
-            </section>
-
-            <section className="grid gap-6 sm:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <h3 className="text-base font-semibold">本周上升最多</h3>
-                <div className="mt-3 overflow-hidden rounded-xl border border-zinc-100">
-                  <div className="divide-y divide-zinc-100">
-                    {steamWeeklyEnriched.moversUp.length === 0 ? (
-                      <div className="p-6 text-sm text-zinc-500">暂无。</div>
-                    ) : (
-                      steamWeeklyEnriched.moversUp.map((it) => (
-                        <ChartListRow
-                          key={`up-${it.appid ?? it.rank}`}
-                          rank={it.rank}
-                          coverUrl={it.headerImage}
-                          title={it.name || (it.appid ? `App ${it.appid}` : "—")}
-                          titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
-                          subtitle={[
-                            it.genres.length ? it.genres.join(" · ") : "类型未知",
-                            typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                          priceMain={it.priceText || "-"}
-                          priceExtra={
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                                ↑{it.rankDelta ?? "—"}
-                              </span>
-                            </div>
-                          }
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <h3 className="text-base font-semibold">本周下降最多</h3>
-                <div className="mt-3 overflow-hidden rounded-xl border border-zinc-100">
-                  <div className="divide-y divide-zinc-100">
-                    {steamWeeklyEnriched.moversDown.length === 0 ? (
-                      <div className="p-6 text-sm text-zinc-500">暂无。</div>
-                    ) : (
-                      steamWeeklyEnriched.moversDown.map((it) => (
-                        <ChartListRow
-                          key={`down-${it.appid ?? it.rank}`}
-                          rank={it.rank}
-                          coverUrl={it.headerImage}
-                          title={it.name || (it.appid ? `App ${it.appid}` : "—")}
-                          titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
-                          subtitle={[
-                            it.genres.length ? it.genres.join(" · ") : "类型未知",
-                            typeof it.weeksOnChart === "number" ? `在榜 ${it.weeksOnChart} 周` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                          priceMain={it.priceText || "-"}
-                          priceExtra={
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
-                                ↓{Math.abs(it.rankDelta ?? 0) || "—"}
-                              </span>
-                            </div>
-                          }
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              <p className="font-medium text-zinc-800">暂无数据</p>
-              <p className="mt-2">请向 Supabase 表 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">steam_weekly_topsellers</code> 写入榜单行（至少含 rank 与 name/title）。若有多批次，建议带 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">fetched_at</code> 或 <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs">updated_at</code> 以便取最新一批。</p>
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 平台动态摘要</h2>
-            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">steam_updates_summary</code>（取最新一条）</p>
-          </div>
-          {steamUpdatesSummary ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              {steamUpdatesSummary.title ? (
-                <h3 className="text-base font-semibold text-zinc-900">{steamUpdatesSummary.title}</h3>
-              ) : null}
-              {steamUpdatesSummary.updatedAt ? (
-                <p className="mt-1 text-xs text-zinc-500">更新：{dateOnlyLabel(steamUpdatesSummary.updatedAt)}</p>
-              ) : null}
-              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-700">
-                {steamUpdatesSummary.body}
-              </pre>
-              {steamUpdatesSummary.extra ? (
-                <a className="mt-3 inline-block text-xs text-blue-600 hover:underline" href={steamUpdatesSummary.extra} target="_blank" rel="noreferrer">
-                  相关链接
-                </a>
-              ) : null}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              暂无数据。
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 即将推出热门</h2>
-            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">steam_upcoming_popular</code></p>
-          </div>
-          {steamUpcomingEnriched?.items?.length ? (
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-              <div className="divide-y divide-zinc-100">
-                {steamUpcomingEnriched.items.slice(0, 20).map((it) => (
-                  <div key={`${it.rank}-${it.name}`} className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-50/60">
-                    <div className="tabular-nums">
-                      <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-100 px-1.5 text-xs font-semibold text-zinc-700">
-                        #{it.rank}
-                      </span>
-                    </div>
-                    {it.headerImage ? (
-                      <img
-                        src={it.headerImage}
-                        alt={it.name}
-                        className="h-14 w-[108px] rounded-md border border-zinc-200 object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="h-14 w-[108px] rounded-md border border-zinc-200 bg-zinc-100" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <SteamAppLink appid={it.appid} className="truncate text-[15px] font-semibold text-zinc-900 hover:underline">
-                        {it.name}
-                      </SteamAppLink>
-                      <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                        {it.genres.length ? it.genres.join(" · ") : "类型未知"}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right tabular-nums text-xs text-zinc-600">
-                      <div>发售日：<span className="font-semibold text-zinc-900">{it.releaseDateText || "—"}</span></div>
-                      <div className="mt-0.5">Followers：<span className="font-semibold text-zinc-900">{typeof it.followers === "number" ? it.followers.toLocaleString() : "—"}</span></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              暂无数据。
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Steam 月度新品热门</h2>
-            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">steam_monthly_top_new</code>；tier 列含 gold/silver 时分组展示</p>
-          </div>
-          {steamMonthlyNewEnriched?.items?.length ? (
-            <div className="grid gap-6 sm:grid-cols-2">
-              {(["gold", "silver"] as const)
-                .filter((tier) => steamMonthlyNewEnriched.items.some((x) => x.tier === tier))
-                .map((tier) => {
-                const title = tier === "gold" ? "黄金级" : "白银级";
-                const list = steamMonthlyNewEnriched.items.filter((x) => x.tier === tier);
-                return (
-                  <div key={tier} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                    <h3 className="text-base font-semibold">{title}</h3>
-                    <div className="mt-3 overflow-hidden rounded-xl border border-zinc-100">
-                      <div className="divide-y divide-zinc-100">
-                        {list.slice(0, 12).map((it) => (
-                          <div key={`${tier}-${it.name}`} className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-50/60">
-                            {it.headerImage ? (
-                              <img
-                                src={it.headerImage}
-                                alt={it.name}
-                                className="h-12 w-[92px] rounded-md border border-zinc-200 object-cover"
-                                loading="lazy"
+              {steamMonthlyNewEnriched?.items?.length ? (
+                <div className="grid gap-8 sm:grid-cols-2">
+                  {(["gold", "silver"] as const)
+                    .filter((tier) => steamMonthlyNewEnriched.items.some((x) => x.tier === tier))
+                    .map((tier) => {
+                      const label = tier === "gold" ? "黄金级" : "白银级";
+                      const list = steamMonthlyNewEnriched.items.filter((x) => x.tier === tier);
+                      return (
+                        <div key={tier}>
+                          <div className="editorial-label mb-4">{label}</div>
+                          <div className="border-t-2 border-border-rule">
+                            <ExpandableList limit={5}>
+                            {list.slice(0, 12).map((it, idx) => (
+                              <ChartRow
+                                key={`${tier}-${it.name}`}
+                                rank={idx + 1}
+                                coverUrl={it.headerImage}
+                                title={it.name}
+                                titleHref={it.appid ? `https://store.steampowered.com/app/${it.appid}/` : null}
+                                subtitle={it.genres.length ? it.genres.join(" · ") : "类型未知"}
+                                staggerIndex={idx}
+                                priceMain={isFreeText(it.priceText) ? <FreePill /> : (it.priceText || "—")}
+                                priceExtra={
+                                  typeof it.discountPercent === "number" && it.discountPercent > 0
+                                    ? <DiscountTag percent={it.discountPercent} />
+                                    : undefined
+                                }
                               />
-                            ) : (
-                              <div className="h-12 w-[92px] rounded-md border border-zinc-200 bg-zinc-100" />
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <SteamAppLink appid={it.appid} className="truncate text-sm font-semibold text-zinc-900 hover:underline">
-                                {it.name}
-                              </SteamAppLink>
-                              <div className="mt-0.5 truncate text-[12px] text-zinc-500">
-                                {it.genres.length ? it.genres.join(" · ") : "类型未知"}
-                              </div>
-                            </div>
-                            <div className="shrink-0 text-right tabular-nums text-xs text-zinc-600">
-                              <div className="text-sm font-semibold text-zinc-900">{it.priceText || "—"}</div>
-                              {typeof it.discountPercent === "number" && it.discountPercent > 0 ? (
-                                <span className="mt-1 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                                  -{it.discountPercent}%
-                                </span>
-                              ) : null}
-                            </div>
+                            ))}
+                            </ExpandableList>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              暂无数据。
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">Epic Games Store</h2>
-            <span className="text-xs text-zinc-500">数据来自 Supabase：<code className="rounded bg-zinc-100 px-1">epic_top_sellers</code> / <code className="rounded bg-zinc-100 px-1">epic_most_played</code></span>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div>
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <h3 className="text-base font-semibold">最畅销</h3>
-                <span className="text-xs text-zinc-500">{dateOnlyLabel(epicTop?.fetchDate)}</span>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <div className="divide-y divide-zinc-100">
-                  {epicCharts?.topSellers?.length ? (
-                    epicCharts.topSellers.slice(0, 10).map((g) => {
-                      const subtitle = g.tags.length ? g.tags.slice(0, 3).join(" · ") : "标签未知";
-                      const priceMain =
-                        g.is_free === true
-                          ? "免费开玩"
-                          : g.current_price_num != null
-                            ? formatMoney(g.current_price_num, g.currency)
-                            : g.current_price_usd != null
-                              ? formatMoney(g.current_price_usd, "USD")
-                            : "—";
-                      const priceExtra =
-                        typeof g.discount_percent === "number" && g.discount_percent > 0 ? (
-                          <span className="inline-block min-w-10 text-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                            -{g.discount_percent}%
-                          </span>
-                        ) : undefined;
-                      return (
-                        <ChartListRow
-                          key={`epic-top-${g.rank}`}
-                          rank={g.rank}
-                          coverUrl={g.cover_image}
-                          title={g.name}
-                          titleHref={g.epic_store_url}
-                          subtitle={subtitle}
-                          priceMain={priceMain}
-                          priceExtra={priceExtra}
-                        />
+                        </div>
                       );
-                    })
-                  ) : (
-                    <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
-                  )}
+                    })}
                 </div>
-              </div>
+              ) : (
+                <div className="py-10 text-center text-sm text-text-muted">暂无数据</div>
+              )}
             </div>
 
-            <div>
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <h3 className="text-base font-semibold">最多人游玩</h3>
-                <span className="text-xs text-zinc-500">{dateOnlyLabel(epicMostPlayed?.fetchDate)}</span>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <div className="divide-y divide-zinc-100">
-                  {epicCharts?.mostPlayed?.length ? (
-                    epicCharts.mostPlayed.slice(0, 10).map((g) => {
-                      const subtitle = g.tags.length ? g.tags.slice(0, 3).join(" · ") : "标签未知";
-                      return (
-                        <ChartListRow
-                          key={`epic-mp-${g.rank}`}
-                          rank={g.rank}
-                          coverUrl={g.cover_image}
-                          title={g.name}
-                          titleHref={g.epic_store_url}
-                          subtitle={subtitle}
-                          priceMain={
-                            g.is_free === true
-                              ? "免费开玩"
-                              : g.current_price_num != null
-                                ? formatMoney(g.current_price_num, g.currency)
-                                : g.current_price_usd != null
-                                  ? formatMoney(g.current_price_usd, "USD")
-                                  : "—"
-                          }
-                          priceExtra={
-                            typeof g.discount_percent === "number" && g.discount_percent > 0 ? (
-                              <span className="inline-block min-w-10 text-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                                -{g.discount_percent}%
-                              </span>
-                            ) : undefined
-                          }
-                        />
-                      );
-                    })
-                  ) : (
-                    <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
+        </SectionShell>
 
-          <div className="mt-6">
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <h3 className="text-base font-semibold">本周免费游戏</h3>
-              <span className="text-xs text-zinc-500">{dateOnlyLabel(epicFree?.fetchDate ?? null)}</span>
-            </div>
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-              <div className="divide-y divide-zinc-100">
-                {epicFree?.games?.length ? (
-                  epicFree.games.slice(0, 20).map((g) => {
-                    const parts: string[] = [];
-                    if (g.endAt) parts.push(`截止 ${dateOnlyLabel(g.endAt)}`);
-                    if (g.startAt) parts.push(`开始 ${dateOnlyLabel(g.startAt)}`);
-                    const subtitle = parts.length ? parts.join(" · ") : "—";
+        {/* ========================================================
+            Epic Games Store
+            ======================================================== */}
+        <SectionShell id="section-epic" colorVar="--color-epic" title="Epic Games Store">
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* 最畅销 */}
+            <div>
+              <div className="flex items-baseline justify-between mb-4">
+                <span className="editorial-label">最畅销</span>
+                <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(epicTop?.fetchDate)}</span>
+              </div>
+              <div className="border-t-2 border-border-rule">
+                {epicCharts?.topSellers?.length ? (
+                  <ExpandableList limit={5}>
+                  {epicCharts.topSellers.slice(0, 10).map((g, idx) => {
+                    const subtitle = g.tags.length ? g.tags.slice(0, 3).join(" · ") : "—";
+                    const hasDiscount = typeof g.discount_percent === "number" && g.discount_percent > 0 && g.current_price_num != null;
+                    const current = g.current_price_num != null ? formatMoney(g.current_price_num, g.currency) : g.current_price_usd != null ? formatMoney(g.current_price_usd, "USD") : null;
+                    const original = g.original_price_num != null ? formatMoney(g.original_price_num, g.currency) : g.original_price_usd != null ? formatMoney(g.original_price_usd, "USD") : null;
+
+                    const priceMain = g.is_free === true
+                      ? <FreePill />
+                      : hasDiscount && current && original
+                        ? (<div className="flex items-center justify-end gap-1.5">
+                            <span className="text-xs text-text-muted line-through tabular-nums">{original}</span>
+                            <span className="text-sm font-medium text-text-primary tabular-nums">{current}</span>
+                          </div>)
+                        : current ?? "—";
+
                     return (
-                      <ChartListRow
-                        key={`epic-free-${g.rank}-${g.name}`}
+                      <ChartRow
+                        key={`epic-top-${g.rank}`}
                         rank={g.rank}
                         coverUrl={g.cover_image}
                         title={g.name}
                         titleHref={g.epic_store_url}
                         subtitle={subtitle}
-                        priceMain="免费领取"
+                        staggerIndex={idx}
+                        priceMain={priceMain}
+                        priceExtra={hasDiscount ? <DiscountTag percent={g.discount_percent!} /> : undefined}
                       />
                     );
-                  })
+                  })}
+                  </ExpandableList>
                 ) : (
-                  <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
+                  <div className="py-6 text-sm text-text-muted text-center">暂无数据</div>
+                )}
+              </div>
+            </div>
+
+            {/* 最多人游玩 */}
+            <div>
+              <div className="flex items-baseline justify-between mb-4">
+                <span className="editorial-label">最多人游玩</span>
+                <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(epicMostPlayed?.fetchDate)}</span>
+              </div>
+              <div className="border-t-2 border-border-rule">
+                {epicCharts?.mostPlayed?.length ? (
+                  <ExpandableList limit={5}>
+                  {epicCharts.mostPlayed.slice(0, 10).map((g, idx) => {
+                    const subtitle = g.tags.length ? g.tags.slice(0, 3).join(" · ") : "—";
+                    const isFree = g.is_free === true;
+                    const hasDiscount = typeof g.discount_percent === "number" && g.discount_percent > 0 && g.current_price_num != null;
+                    const current = g.current_price_num != null ? formatMoney(g.current_price_num, g.currency) : g.current_price_usd != null ? formatMoney(g.current_price_usd, "USD") : null;
+                    const original = g.original_price_num != null ? formatMoney(g.original_price_num, g.currency) : g.original_price_usd != null ? formatMoney(g.original_price_usd, "USD") : null;
+
+                    const priceMain = isFree
+                      ? <FreePill />
+                      : hasDiscount && current && original
+                        ? (<div className="flex items-center justify-end gap-1.5">
+                            <span className="text-xs text-text-muted line-through tabular-nums">{original}</span>
+                            <span className="text-sm font-medium text-text-primary tabular-nums">{current}</span>
+                          </div>)
+                        : current ?? "—";
+
+                    return (
+                      <ChartRow
+                        key={`epic-mp-${g.rank}`}
+                        rank={g.rank}
+                        coverUrl={g.cover_image}
+                        title={g.name}
+                        titleHref={g.epic_store_url}
+                        subtitle={subtitle}
+                        staggerIndex={idx}
+                        priceMain={priceMain}
+                        priceExtra={hasDiscount ? <DiscountTag percent={g.discount_percent!} /> : undefined}
+                      />
+                    );
+                  })}
+                  </ExpandableList>
+                ) : (
+                  <div className="py-6 text-sm text-text-muted text-center">暂无数据</div>
                 )}
               </div>
             </div>
           </div>
-        </section>
 
+          {/* 免费游戏 — 卡片网格 */}
+          <div className="mt-10">
+            <div className="flex items-baseline justify-between mb-6">
+              <h3 className="font-display text-lg sm:text-xl font-bold text-text-primary">本周免费游戏</h3>
+              <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(epicFree?.fetchDate ?? null)}</span>
+            </div>
+            {epicFree?.games?.length ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border-light border border-border-light">
+                {epicFree.games.slice(0, 20).map((g, idx) => {
+                  const dateText = g.startAt && g.endAt
+                    ? `${dateOnlyLabel(g.startAt)} 至 ${dateOnlyLabel(g.endAt)}`
+                    : g.startAt
+                      ? `${dateOnlyLabel(g.startAt)} 起`
+                      : g.endAt
+                        ? `截止 ${dateOnlyLabel(g.endAt)}`
+                        : null;
+                  return (
+                    <div
+                      key={`epic-free-${g.rank}-${g.name}`}
+                      className="flex items-start gap-3 p-4 bg-bg-base group animate-card-in"
+                      style={{ "--stagger": idx } as React.CSSProperties}
+                    >
+                      <div className="w-14 h-14 flex-shrink-0 overflow-hidden bg-bg-surface" style={{ borderRadius: "2px" }}>
+                        {g.cover_image ? (
+                          <img
+                            src={normalizeCoverUrl(g.cover_image) ?? undefined}
+                            alt={g.name}
+                            className="object-cover w-full h-full cover-zoom"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <ExternalLink
+                          href={g.epic_store_url}
+                          className="text-sm font-medium text-text-primary truncate block hover:text-text-accent transition-colors"
+                        >
+                          {g.name}
+                        </ExternalLink>
+                        {g.tags.length > 0 ? (
+                          <div className="flex gap-1 mt-0.5 overflow-hidden">
+                            {g.tags.slice(0, 3).map((t) => (
+                              <span key={t} className="inline-block px-1.5 py-px text-[10px] leading-tight rounded bg-bg-surface text-text-muted truncate max-w-[80px]">{t}</span>
+                            ))}
+                          </div>
+                        ) : null}
+                        <p className="text-xs text-text-muted truncate mt-0.5">
+                          {dateText || "—"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* 不满3列时补空白格，避免灰色背景露出 */}
+                {(() => {
+                  const remainder = epicFree.games.slice(0, 20).length % 3;
+                  if (remainder === 0) return null;
+                  const fillers = 3 - remainder;
+                  return Array.from({ length: fillers }, (_, i) => (
+                    <div key={`epic-free-filler-${i}`} className="hidden sm:block bg-bg-base" />
+                  ));
+                })()}
+              </div>
+            ) : (
+              <div className="py-6 text-sm text-text-muted text-center">暂无数据</div>
+            )}
+          </div>
+        </SectionShell>
+
+        {/* ========================================================
+            WeGame
+            ======================================================== */}
         <WeGameSection bestseller={wgBestseller} purchase={wgPurchase} follow={wgFollow} />
 
-        <section className="mt-10">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">TapTap（PC）</h2>
-            <span className="text-xs text-zinc-500">数据来自 Supabase：<code className="rounded bg-zinc-100 px-1">taptap_hot_download</code> / <code className="rounded bg-zinc-100 px-1">taptap_test_hot</code></span>
-          </div>
-          <div className="grid gap-6 lg:grid-cols-2">
+        {/* ========================================================
+            TapTap
+            ======================================================== */}
+        <SectionShell id="section-taptap" colorVar="--color-taptap" title="TapTap（PC）">
+          <div className="grid gap-8 lg:grid-cols-2">
             {[
               { title: "热门下载", key: "hot", pack: tapHot },
               { title: "测试热度", key: "test", pack: tapTest },
             ].map((x) => (
               <div key={x.key}>
-                <div className="mb-3 flex items-end justify-between gap-3">
-                  <h3 className="text-base font-semibold">{x.title}</h3>
-                  <span className="text-xs text-zinc-500">{dateOnlyLabel(x.pack?.generatedAt)}</span>
+                <div className="flex items-baseline justify-between mb-4">
+                  <span className="editorial-label">{x.title}</span>
+                  <span className="text-xs text-text-muted font-mono tabular-nums">{dateOnlyLabel(x.pack?.generatedAt)}</span>
                 </div>
-                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                  <div className="divide-y divide-zinc-100">
-                    {x.pack?.games?.length ? (
-                      x.pack.games.slice(0, 20).map((g) => {
-                        const sub: string[] = [];
-                        if (typeof g.rating === "number") sub.push(`评分 ${g.rating.toFixed(1)}`);
-                        if (g.tags.length) {
-                          const norm = (s: string) =>
-                            s
-                              .trim()
-                              .replace(/\s+/g, "")
-                              .replace(/[·•・•]/g, "")
-                              .replace(/[（()）]/g, "");
-                          const cleanedTags = g.tags
-                            .map((t) => t.trim())
-                            .filter(Boolean)
-                            .filter((t) => {
-                              // 热门下载右侧已显示“免费下载/¥xx”等，避免副标题重复出现同一文案
-                              if (x.key !== "hot") return true;
-                              if (norm(t) === "免费下载") return false;
-                              if ((g.price ?? "").trim() && norm(t) === norm(g.price ?? "")) return false;
-                              return true;
-                            })
-                            .slice(0, 3);
-                          if (cleanedTags.length) sub.push(cleanedTags.join(" · "));
-                        }
-                        // TapTap：热门下载/测试热度 都不在副标题重复展示 test_status（测试热度右侧已展示）
-                        const subtitle = sub.length ? sub.join(" · ") : "—";
-                        return (
-                          <ChartListRow
-                            key={`${x.key}-${g.rank}`}
-                            rank={g.rank}
-                            coverUrl={g.cover_image}
-                            title={g.title}
-                            titleHref={g.store_url}
-                            subtitle={subtitle}
-                            priceMain={x.key === "test" ? g.test_status ?? "—" : g.price ?? "—"}
-                          />
-                        );
-                      })
-                    ) : (
-                      <div className="p-6 text-sm text-zinc-500">暂无数据。</div>
-                    )}
-                  </div>
+                <div className="border-t-2 border-border-rule">
+                  {x.pack?.games?.length ? (
+                    <ExpandableList limit={5}>
+                    {x.pack.games.slice(0, 20).map((g, idx) => {
+                      const sub: string[] = [];
+                      if (typeof g.rating === "number") sub.push(`${g.rating.toFixed(1)} 分`);
+                      if (g.tags.length) {
+                        const norm = (s: string) => s.trim().replace(/\s+/g, "").replace(/[·•・•]/g, "").replace(/[（()）]/g, "");
+                        const cleanedTags = g.tags.map((t) => t.trim()).filter(Boolean).filter((t) => {
+                          if (x.key !== "hot") return true;
+                          if (norm(t) === "免费下载") return false;
+                          if ((g.price ?? "").trim() && norm(t) === norm(g.price ?? "")) return false;
+                          return true;
+                        }).slice(0, 3);
+                        if (cleanedTags.length) sub.push(cleanedTags.join(" · "));
+                      }
+
+                      return (
+                        <ChartRow
+                          key={`${x.key}-${g.rank}`}
+                          rank={g.rank}
+                          coverUrl={g.cover_image}
+                          title={g.title}
+                          titleHref={g.store_url}
+                          subtitle={sub.length ? sub.join(" · ") : "—"}
+                          staggerIndex={idx}
+                          priceMain={
+                            x.key === "test"
+                              ? g.test_status ?? "—"
+                              : isFreeText(g.price)
+                                ? <FreePill />
+                                : g.price ?? "—"
+                          }
+                        />
+                      );
+                    })}
+                    </ExpandableList>
+                  ) : (
+                    <div className="py-6 text-sm text-text-muted text-center">暂无数据</div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
-        </section>
+        </SectionShell>
 
-        <section className="mt-10">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">4399 摘要</h2>
-            <p className="mt-1 text-xs text-zinc-500">来自 Supabase <code className="rounded bg-zinc-100 px-1">data_4399_summary</code>（取最新一条）</p>
-          </div>
+        {/* ========================================================
+            4399 摘要
+            ======================================================== */}
+        <SectionShell id="section-4399" colorVar="--color-4399" title="4399 平台">
           {summary4399New ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
                 <div>
-                  <h3 className="text-base font-semibold text-zinc-900">周期内上新统计</h3>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    统计周期：<span className="font-medium text-zinc-800">{summary4399New.timeWindow ?? "—"}</span>
-                    {summary4399New.updatedAt ? (
-                      <span className="ml-2">更新：{dateOnlyLabel(summary4399New.updatedAt)}</span>
-                    ) : null}
+                  <div className="editorial-label mb-1">周期内上新统计</div>
+                  <p className="text-xs text-text-muted">
+                    {summary4399New.timeWindow ?? "—"}
+                    {summary4399New.updatedAt ? ` · 更新 ${dateOnlyLabel(summary4399New.updatedAt)}` : ""}
                   </p>
                 </div>
-                <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                  <div className="text-[11px] font-medium text-zinc-500">周期内上新</div>
-                  <div className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
+                <div className="text-right">
+                  <div className="hero-number text-3xl tabular-nums">
                     {typeof summary4399New.totalCount === "number" ? summary4399New.totalCount.toLocaleString() : "—"}
                   </div>
+                  <div className="text-xs text-text-muted mt-0.5">新上线</div>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <div className="text-xs font-medium text-zinc-600">类别分布</div>
-                {Object.keys(summary4399New.categoryBreakdown).length ? (
-                  <div className="mt-3 grid gap-2">
+              {/* 类别分布 — 水平条形 */}
+              {Object.keys(summary4399New.categoryBreakdown).length ? (
+                <div>
+                  <div className="editorial-label mb-3">类别分布</div>
+                  <div className="space-y-2">
                     {(() => {
                       const entries = Object.entries(summary4399New.categoryBreakdown)
                         .filter(([, v]) => typeof v === "number" && Number.isFinite(v) && v > 0)
                         .sort((a, b) => b[1] - a[1])
                         .slice(0, 10);
                       const total = entries.reduce((acc, [, v]) => acc + v, 0);
-                      return entries.map(([k, v]) => {
+                      return entries.map(([k, v], idx) => {
                         const pct = total > 0 ? Math.round((v / total) * 100) : 0;
                         return (
-                          <div key={k} className="flex items-center gap-3">
-                            <div className="w-20 shrink-0 truncate text-xs text-zinc-700" title={k}>
+                          <div key={k} className="flex items-center gap-3 animate-row-in" style={{ "--stagger": idx } as React.CSSProperties}>
+                            <div className="w-16 shrink-0 truncate text-xs text-text-secondary text-right" title={k}>
                               {k}
                             </div>
-                            <div className="flex-1">
-                              <div className="h-2.5 overflow-hidden rounded-full bg-zinc-100">
-                                <div className="h-full rounded-full bg-zinc-900/70" style={{ width: `${pct}%` }} />
-                              </div>
+                            <div className="flex-1 h-4 bg-bg-surface overflow-hidden" style={{ borderRadius: "1px" }}>
+                              <div
+                                className="h-full animate-bar-grow"
+                                style={{ width: `${pct}%`, backgroundColor: "var(--color-4399)", opacity: 0.6, "--stagger": idx } as React.CSSProperties}
+                              />
                             </div>
-                            <div className="w-20 shrink-0 text-right tabular-nums text-xs text-zinc-600">
-                              {v.toLocaleString()} <span className="text-zinc-400">({pct}%)</span>
+                            <div className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-text-muted">
+                              {v} <span className="text-text-muted/60">({pct}%)</span>
                             </div>
                           </div>
                         );
                       });
                     })()}
                   </div>
-                ) : (
-                  <div className="mt-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                    暂无类别分布数据。
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : null}
             </div>
           ) : summary4399 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              {summary4399.title ? <h3 className="text-base font-semibold text-zinc-900">{summary4399.title}</h3> : null}
+            <div className="max-w-3xl">
+              {summary4399.title ? <h3 className="text-base font-medium text-text-primary">{summary4399.title}</h3> : null}
               {summary4399.updatedAt ? (
-                <p className="mt-1 text-xs text-zinc-500">更新：{dateOnlyLabel(summary4399.updatedAt)}</p>
+                <p className="mt-1 text-xs text-text-muted">更新：{dateOnlyLabel(summary4399.updatedAt)}</p>
               ) : null}
-              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-700">
+              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-text-secondary">
                 {summary4399.body}
               </pre>
               {summary4399.extra ? (
-                <a className="mt-3 inline-block text-xs text-blue-600 hover:underline" href={summary4399.extra} target="_blank" rel="noreferrer">
-                  相关链接
+                <a className="mt-3 inline-flex text-xs text-text-accent hover:underline" href={summary4399.extra} target="_blank" rel="noreferrer">
+                  查看详情 →
                 </a>
               ) : null}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-600">
-              暂无数据。
-            </div>
+            <div className="py-10 text-center text-sm text-text-muted">暂无数据</div>
           )}
-        </section>
+        </SectionShell>
 
+        {/* ========================================================
+            页脚 — 极简编辑式
+            ======================================================== */}
+        <footer className="mt-12 pt-8 border-t-2 border-border-rule pb-16 animate-subtle-rise" style={{ animationDelay: "0.2s", animationFillMode: "backwards" }}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
+            <div className="space-y-1.5">
+              <p className="text-xs text-text-muted">
+                数据来源：Steam · Epic Games Store · WeGame · TapTap · 4399 · 国家统计年鉴 · StatCounter
+              </p>
+              <p className="text-xs text-text-muted">
+                生成于{" "}
+                <time className="font-mono tabular-nums text-text-secondary" dateTime={new Date().toISOString()}>
+                  {new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}
+                </time>
+              </p>
+            </div>
+            <p className="text-[11px] text-text-muted/50 max-w-xs sm:text-right leading-relaxed">
+              数据均来自公开渠道，仅供内部参考。榜单排名与价格以各平台实时数据为准。
+            </p>
+          </div>
+        </footer>
       </main>
     </div>
   );
 }
-

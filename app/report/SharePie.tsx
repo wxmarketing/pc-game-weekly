@@ -1,17 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
-type Props = {
-  title?: string;
-  shares: Record<string, number>; // 0-1
-  variant?: "compact" | "full";
-  /** 左侧图、右侧图例（大屏并排，小屏上下） */
-  layout?: "stacked" | "sideBySide";
-  legendMax?: number;
+export interface SharePieProps {
+  data: Array<{ name: string; value: number }>;
   labelMap?: Record<string, string>;
-  pinLast?: string[]; // names that should always be sorted to the end (e.g. "Others")
-};
+  title: string;
+  subtitle?: string;
+  source?: string;
+  colors?: string[];
+}
 
 type Slice = {
   name: string;
@@ -20,24 +18,29 @@ type Slice = {
   color: string;
 };
 
-const COLORS = [
-  "#3b82f6", // blue
-  "#10b981", // emerald
-  "#f59e0b", // amber
-  "#a855f7", // purple
-  "#ef4444", // red
-  "#14b8a6", // teal
-  "#f97316", // orange
-  "#64748b", // slate
-];
+/* 编辑风配色：低饱和、高雅 */
+const EDITORIAL_COLORS = [
+  "oklch(35% 0.08 240)",  /* 深蓝灰 */
+  "oklch(55% 0.10 25)",   /* 暖赤陶 */
+  "oklch(50% 0.08 160)",  /* 暗绿 */
+  "oklch(45% 0.06 290)",  /* 暗紫灰 */
+  "oklch(55% 0.12 75)",   /* 琥珀 */
+  "oklch(40% 0.06 200)",  /* 青灰 */
+  "oklch(50% 0.10 45)",   /* 赭石 */
+  "oklch(60% 0.04 80)",   /* 中性暖灰 */
+] as const;
 
-function clamp01(x: number) {
+function clampNonNeg(x: number) {
   if (!Number.isFinite(x)) return 0;
-  return Math.max(0, Math.min(1, x));
+  return Math.max(0, x);
 }
 
 function toPercent(x: number) {
-  return `${(x * 100).toFixed(2)}%`;
+  return `${(x * 100).toFixed(1)}%`;
+}
+
+function fmt(n: number) {
+  return Number.isFinite(n) ? n.toFixed(6) : "0";
 }
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -49,48 +52,35 @@ function describeArc(cx: number, cy: number, r: number, startAngle: number, endA
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);
   const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+  return `M ${fmt(start.x)} ${fmt(start.y)} A ${fmt(r)} ${fmt(r)} 0 ${largeArcFlag} 0 ${fmt(end.x)} ${fmt(end.y)}`;
 }
 
-export function SharePie({
-  title,
-  shares,
-  variant = "full",
-  layout = "stacked",
-  legendMax,
-  labelMap,
-  pinLast,
-}: Props) {
+export function SharePie({ data, labelMap, title, subtitle, source, colors }: SharePieProps) {
   const [hoveredName, setHoveredName] = useState<string | null>(null);
 
   const slices: Slice[] = useMemo(() => {
-    const pinned = new Set((pinLast || []).filter(Boolean));
-    const entries = Object.entries(shares || {})
-      .map(([name, v]) => ({ name, value: clamp01(Number(v)) }))
-      .filter((x) => x.value > 0)
-      .sort((a, b) => {
-        const ap = pinned.has(a.name);
-        const bp = pinned.has(b.name);
-        if (ap !== bp) return ap ? 1 : -1; // pinned to end
-        return b.value - a.value;
-      });
+    const entries = (data || [])
+      .map((x) => ({ name: String(x.name), value: clampNonNeg(Number(x.value)) }))
+      .filter((x) => x.name && x.value > 0)
+      .sort((a, b) => b.value - a.value);
 
     const total = entries.reduce((s, x) => s + x.value, 0);
     const normalized = total > 0 ? entries.map((x) => ({ ...x, value: x.value / total })) : [];
 
+    const pal = colors && colors.length ? colors : Array.from(EDITORIAL_COLORS);
     return normalized.map((x, idx) => ({
       name: x.name,
       label: (labelMap && labelMap[x.name]) || x.name,
       value: x.value,
-      color: COLORS[idx % COLORS.length]!,
+      color: pal[idx % pal.length]!,
     }));
-  }, [shares, labelMap, pinLast]);
+  }, [data, labelMap, colors]);
 
-  const size = variant === "compact" ? 200 : layout === "sideBySide" ? 260 : 240;
+  const size = 180;
   const cx = size / 2;
   const cy = size / 2;
-  const r = variant === "compact" ? 78 : layout === "sideBySide" ? 104 : 96;
-  const stroke = variant === "compact" ? 20 : layout === "sideBySide" ? 30 : 26;
+  const r = 72;
+  const stroke = 14;
   const innerR = r - stroke / 2;
 
   let angle = 0;
@@ -101,131 +91,110 @@ export function SharePie({
     return { ...s, start, end };
   });
 
-  const legend = typeof legendMax === "number" ? slices.slice(0, legendMax) : slices;
-
-  function LegendItem({ s, idx }: { s: Slice; idx: number }) {
-    const active = hoveredName === s.name;
-    return (
-      <button
-        key={s.name}
-        type="button"
-        onMouseEnter={() => setHoveredName(s.name)}
-        onMouseLeave={() => setHoveredName(null)}
-        className={[
-          "flex w-full items-center justify-between gap-3 rounded-lg px-2 text-left transition-colors",
-          variant === "compact" ? "py-1" : "py-1.5",
-          active ? "bg-blue-50 ring-2 ring-blue-200/80" : "hover:bg-zinc-50/80",
-        ].join(" ")}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="w-5 shrink-0 text-xs font-semibold tabular-nums text-zinc-400">{idx + 1}</span>
-          <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: s.color }} aria-hidden="true" />
-          <span className="truncate text-sm text-zinc-700" title={s.name}>
-            {s.label}
-          </span>
-        </span>
-        <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-600">{toPercent(s.value)}</span>
-      </button>
-    );
-  }
-
-  const chartBlock = (
-    <div
-      className={
-        layout === "sideBySide" ? "relative mx-auto shrink-0 sm:mx-0" : variant === "compact" ? "relative mt-2" : "relative mt-4"
-      }
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} onMouseLeave={() => setHoveredName(null)}>
-        <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#f4f4f5" strokeWidth={stroke} />
-        {arcs.map((a) => {
-          const active = hoveredName === a.name;
-          return (
-            <path
-              key={a.name}
-              d={describeArc(cx, cy, innerR, a.start, a.end)}
-              fill="none"
-              stroke={a.color}
-              strokeWidth={active ? stroke + 4 : stroke}
-              strokeLinecap="butt"
-              style={{
-                cursor: "pointer",
-                filter: active ? "brightness(0.95)" : undefined,
-                transition: "stroke-width 120ms ease",
-              }}
-              onMouseEnter={() => setHoveredName(a.name)}
-            />
-          );
-        })}
-        <circle cx={cx} cy={cy} r={innerR - stroke / 2 - 2} fill="white" />
-      </svg>
-    </div>
-  );
-
-  const legendInner =
-    legend.length === 0 ? (
-      <div className="text-sm text-zinc-500">暂无数据</div>
-    ) : layout === "sideBySide" ? (
-      <div className="space-y-1">
-        {legend.map((s, idx) => (
-          <LegendItem key={s.name} s={s} idx={idx} />
-        ))}
-      </div>
-    ) : variant === "compact" ? (
-      <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-        {(() => {
-          const split = Math.ceil(legend.length / 2);
-          const left = legend.slice(0, split);
-          const right = legend.slice(split);
-          return (
-            <>
-              <div className="space-y-1">
-                {left.map((s, idx) => (
-                  <LegendItem key={s.name} s={s} idx={idx} />
-                ))}
-              </div>
-              <div className="space-y-1">
-                {right.map((s, idx) => (
-                  <LegendItem key={s.name} s={s} idx={split + idx} />
-                ))}
-              </div>
-            </>
-          );
-        })()}
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-        {legend.map((s, idx) => (
-          <LegendItem key={s.name} s={s} idx={idx} />
-        ))}
-      </div>
-    );
-
-  const legendBlock = (
-    <div
-      className={
-        layout === "sideBySide" ? "min-w-0 flex-1" : variant === "compact" ? "mt-3 w-full" : "mt-5 w-full"
-      }
-    >
-      {legendInner}
-    </div>
-  );
-
   return (
     <div className="w-full">
-      {title ? (
-        <div className="mb-2 w-full text-left text-xs font-medium text-zinc-500">{title}</div>
-      ) : null}
-      <div
-        className={
-          layout === "sideBySide"
-            ? "flex w-full flex-col items-stretch gap-6 sm:flex-row sm:items-center"
-            : "flex flex-col items-center"
-        }
-      >
-        {chartBlock}
-        {legendBlock}
+      {/* 标题区 */}
+      <div className="mb-4">
+        <div className="editorial-label mb-0.5">{title}</div>
+        {subtitle ? <div className="text-xs text-text-muted">{subtitle}</div> : null}
       </div>
+
+      <div className="grid w-full items-center gap-4" style={{ gridTemplateColumns: `${size}px 1fr` }}>
+        {/* 环形图 — 固定列宽，所有卡片对齐 */}
+        <div className="relative">
+          <svg
+            width={size}
+            height={size}
+            viewBox={`0 0 ${size} ${size}`}
+            role="img"
+            aria-label={`${title}，${slices.length}项数据`}
+            onMouseLeave={() => setHoveredName(null)}
+            className="block select-none"
+          >
+            <title>{title}</title>
+            {/* 底圈 */}
+            <circle
+              cx={cx} cy={cy} r={innerR}
+              fill="none"
+              stroke="var(--color-border-light)"
+              strokeWidth={stroke}
+            />
+            {/* 数据弧 */}
+            {arcs.map((a, idx) => {
+              const active = hoveredName === a.name;
+              const dimmed = hoveredName != null && !active;
+              /* 弧长 = r × 弧度 */
+              const arcLen = innerR * ((a.end - a.start) * Math.PI) / 180;
+              return (
+                <path
+                  key={a.name}
+                  d={describeArc(cx, cy, innerR, a.start, a.end)}
+                  fill="none"
+                  stroke={a.color}
+                  strokeWidth={active ? stroke + 4 : stroke}
+                  strokeLinecap="butt"
+                  className="animate-arc-in"
+                  style={{
+                    cursor: "pointer",
+                    opacity: dimmed ? 0.25 : 1,
+                    transition: "opacity 150ms ease, stroke-width 150ms ease",
+                    animationDelay: `${idx * 80}ms`,
+                    strokeDasharray: arcLen,
+                    strokeDashoffset: arcLen,
+                    "--arc-len": arcLen,
+                  } as React.CSSProperties}
+                  onMouseEnter={() => setHoveredName(a.name)}
+                />
+              );
+            })}
+            {/* 中心白圆 */}
+            <circle cx={cx} cy={cy} r={innerR - stroke / 2 - 1} fill="var(--color-bg-base)" />
+          </svg>
+        </div>
+
+        {/* 图例 — 填满右列 */}
+        <div className="min-w-0">
+          {slices.length === 0 ? (
+            <div className="text-sm text-text-muted">暂无数据</div>
+          ) : (
+            <div className="space-y-0.5">
+              {slices.map((s, idx) => {
+                const active = hoveredName === s.name;
+                return (
+                  <button
+                    key={s.name}
+                    type="button"
+                    onMouseEnter={() => setHoveredName(s.name)}
+                    onMouseLeave={() => setHoveredName(null)}
+                    className={[
+                      "w-full flex items-center gap-2 px-1.5 py-1 text-left transition-colors duration-100 animate-row-in",
+                      active ? "bg-bg-surface" : "hover:bg-bg-surface",
+                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--color-accent)] focus-visible:outline-offset-1",
+                    ].join(" ")}
+                    style={{ borderRadius: "2px", "--stagger": idx } as React.CSSProperties}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 shrink-0"
+                      style={{ backgroundColor: s.color, borderRadius: "1px" }}
+                      aria-hidden="true"
+                    />
+                    <span className="flex-1 text-xs text-text-secondary whitespace-nowrap" title={s.name}>
+                      {s.label}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs font-medium tabular-nums text-text-primary text-right" style={{ minWidth: "3.5em" }}>
+                      {toPercent(s.value)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {source ? (
+        <div className="mt-3 pt-2 border-t border-border-light text-[11px] text-text-muted leading-snug">{source}</div>
+      ) : null}
     </div>
   );
 }
-

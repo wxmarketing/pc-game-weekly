@@ -5,12 +5,12 @@ import { useState, type ReactNode } from "react";
 /* 顺序与页面 section 出现顺序一致 */
 export const NAV_ITEMS = [
   { id: "section-news", label: "行业新鲜事", color: "var(--color-news)" },
-  { id: "section-overview", label: "硬件份额", color: "var(--color-accent)" },
   { id: "section-steam", label: "Steam", color: "var(--color-steam)" },
   { id: "section-epic", label: "Epic Games Store", color: "var(--color-epic)" },
   { id: "section-wegame", label: "WeGame", color: "var(--color-wegame)" },
   { id: "section-taptap", label: "TapTap PC", color: "var(--color-taptap)" },
   { id: "section-4399", label: "4399", color: "var(--color-4399)" },
+  { id: "section-overview", label: "硬件份额", color: "var(--color-accent)" },
 ] as const;
 
 export type SectionId = (typeof NAV_ITEMS)[number]["id"];

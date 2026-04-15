@@ -106,9 +106,10 @@ export function useBangumiStoreLink(bangumiId: number | null | undefined, entity
   });
 
   const fetchStore = useCallback(() => {
-    if (!bangumiId) return;
+    // 没有 bangumiId 也没有 entityName 才跳过
+    if (!bangumiId && !entityName) return;
     setState((prev) => ({ ...prev, loading: true }));
-    fetchStoreLinks(bangumiId, entityName).then((result) => {
+    fetchStoreLinks(bangumiId ?? 0, entityName).then((result) => {
       setState({ loading: false, data: result });
     });
   }, [bangumiId, entityName]);

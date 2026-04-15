@@ -150,10 +150,10 @@ function GameDetail({
   const [showFixModal, setShowFixModal] = useState(false);
   const [localCoverUrl, setLocalCoverUrl] = useState(topic.cover_url);
 
-  // 展开时自动触发
+  // 展开时自动触发（即使没有 bangumiId，也尝试查 Supabase 缓存）
   useEffect(() => {
-    if (bangumiId) fetchStore();
-  }, [bangumiId, fetchStore]);
+    fetchStore();
+  }, [fetchStore]);
 
   // 优先用已有数据，fallback 到 Bangumi 拉取结果
   const finalStoreUrl = topic.store_url || storeLink?.store_url;

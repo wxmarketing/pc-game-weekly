@@ -405,7 +405,10 @@ export async function fetchStoreLinks(
     }
   }
 
-  // 3. 请求 Bangumi API
+  // 3. 请求 Bangumi API（bangumiId 为 0 表示没有有效 ID，跳过）
+  if (!bangumiId) {
+    return null;
+  }
   try {
     const res = await fetch(`${BGM_API}/subjects/${bangumiId}`, {
       headers: { "User-Agent": "PCGameWeekly/1.0" },

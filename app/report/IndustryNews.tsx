@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import type { EntityTopic } from "@/lib/report/supabaseReportData";
 export type { EntityTopic } from "@/lib/report/supabaseReportData";
 import { useBangumiCovers, useBangumiStoreLink } from "@/lib/bangumi/hooks";
+import { BangumiFixModal } from "./BangumiFixModal";
 
 /* ============================================
    子 Tab 定义
@@ -137,13 +138,17 @@ function GameDetail({
   topic,
   bangumiId,
   onClose,
+  onCoverFixed,
 }: {
   topic: EntityTopic;
   bangumiId?: number | null;
   onClose: () => void;
+  onCoverFixed?: (newCoverUrl: string) => void;
 }) {
   // 按需拉取商店链接
   const { storeLink, loadingStore, fetchStore } = useBangumiStoreLink(bangumiId);
+  const [showFixModal, setShowFixModal] = useState(false);
+  const [localCoverUrl, setLocalCoverUrl] = useState(topic.cover_url);
 
   // 展开时自动触发
   useEffect(() => {
@@ -157,6 +162,13 @@ function GameDetail({
   // 游戏类型标签（服务端预取 or 客户端 hook 注入）
   const tags = topic.bangumi_tags;
 
+  const handleFixed = useCallback((data: { bangumi_id: number; cover_url: string }) => {
+    setLocalCoverUrl(data.cover_url);
+    onCoverFixed?.(data.cover_url);
+  }, [onCoverFixed]);
+
+  const displayCoverUrl = localCoverUrl || topic.cover_url;
+
   return (
     <div className="in-detail animate-card-in">
       {/* 用 grid 布局：封面左列 + 内容右列，body 自然对齐标题 */}
@@ -165,7 +177,7 @@ function GameDetail({
         <div className="in-detail-left">
           <div className="in-detail-cover-sm">
             <img
-              src={topic.cover_url || "/no-cover.png"}
+              src={displayCoverUrl || "/no-cover.png"}
               alt={topic.entity_name}
               className="w-full h-full object-cover"
               onError={(e) => { e.currentTarget.src = "/no-cover.png"; }}
@@ -187,6 +199,14 @@ function GameDetail({
               游戏详情
             </a>
           )}
+
+          {/* 修复关联按钮 */}
+          <button
+            onClick={() => setShowFixModal(true)}
+            className="in-detail-fix-btn"
+          >
+            🔧 修复关联
+          </button>
 
           {/* 游戏类型标签（胶囊样式）— 暂时隐藏 */}
           {/* {tags && tags.length > 0 && (
@@ -235,6 +255,16 @@ function GameDetail({
           </div>
         </div>
       </div>
+
+      {/* 修复弹窗 */}
+      {showFixModal && (
+        <BangumiFixModal
+          entityName={topic.entity_name}
+          currentCoverUrl={displayCoverUrl}
+          onClose={() => setShowFixModal(false)}
+          onFixed={handleFixed}
+        />
+      )}
     </div>
   );
 }

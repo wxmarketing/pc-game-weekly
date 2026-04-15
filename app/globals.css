@@ -795,7 +795,7 @@ body {
   /* Section 标题（侧边栏模式下直接在内容区显示） */
   .section-title {
     font-family: "Noto Serif SC", "Source Han Serif SC", "STSong", serif;
-    font-size: 1.75rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--color-text-primary);
     letter-spacing: 0.05em;
@@ -1306,6 +1306,31 @@ body {
     font-size: 0.625rem;
     color: var(--color-text-muted);
     text-align: center;
+  }
+
+  /* 修复关联按钮 */
+  .in-detail-fix-btn {
+    display: block;
+    width: 80px;
+    margin-top: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    opacity: 0.6;
+  }
+  .in-detail-fix-btn:hover {
+    opacity: 1;
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: rgba(59, 130, 246, 0.05);
+  }
     opacity: 0.6;
   }
 

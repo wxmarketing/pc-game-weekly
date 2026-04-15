@@ -10,8 +10,8 @@ import { useBangumiCovers, useBangumiStoreLink } from "@/lib/bangumi/hooks";
    ============================================ */
 const SUB_TABS = [
   { id: "hot-games", label: "什么游戏讨论度高？" },
-  { id: "companies", label: "厂商在干什么？" },
-  { id: "platforms", label: "平台在干什么？" },
+  { id: "platforms", label: "平台有什么动向？" },
+  { id: "companies", label: "厂商有什么动向？" },
   { id: "random", label: "随机新鲜事" },
 ] as const;
 

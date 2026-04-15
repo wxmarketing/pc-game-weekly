@@ -794,11 +794,11 @@ body {
 
   /* Section 标题（侧边栏模式下直接在内容区显示） */
   .section-title {
-    font-family: var(--font-display);
+    font-family: "Noto Serif SC", "Source Han Serif SC", "STSong", serif;
     font-size: 1.75rem;
-    font-weight: 800;
+    font-weight: 600;
     color: var(--color-text-primary);
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.2;
     margin-bottom: 0.5rem;
   }

@@ -242,10 +242,12 @@ export function WeGameSection({
   bestseller,
   purchase,
   follow,
+  inline,
 }: {
   bestseller: Pack;
   purchase: Pack;
   follow: Pack;
+  inline?: boolean;
 }) {
   const charts = useMemo(
     () => [
@@ -256,13 +258,19 @@ export function WeGameSection({
     [bestseller, purchase, follow],
   );
 
+  const content = (
+    <div className="grid gap-10">
+      {charts.map((c) => (
+        <SubChart key={c.title} title={c.title} pack={c.pack} isFollow={c.isFollow} />
+      ))}
+    </div>
+  );
+
+  if (inline) return content;
+
   return (
     <SectionShell id="section-wegame" colorVar="--color-wegame" title="WeGame">
-      <div className="grid gap-10">
-        {charts.map((c) => (
-          <SubChart key={c.title} title={c.title} pack={c.pack} isFollow={c.isFollow} />
-        ))}
-      </div>
+      {content}
     </SectionShell>
   );
 }

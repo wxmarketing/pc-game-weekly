@@ -104,6 +104,24 @@ create table if not exists public.pc_search_engine_share_monthly (
   updated_at timestamptz not null default now()
 );
 
+-- 5) Bangumi 缓存（entity_name -> 封面、商店链接、标签）
+create table if not exists public.bangumi_cache (
+  entity_name text primary key, -- 实体名（游戏名），作为主键
+  bangumi_id int, -- Bangumi subject id，可能为 null（找不到匹配）
+  cover_url text, -- 封面图 URL
+  store_url text, -- 首选商店链接
+  store_type text, -- 商店类型 (steam/epic/official/bgm 等)
+  name_cn text, -- Bangumi 上的中文名
+  name text, -- Bangumi 上的原名
+  tags text[], -- 游戏类型标签（从 Bangumi 获取的热门标签）
+  platform text, -- 平台信息
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists bangumi_cache_bangumi_id_idx
+  on public.bangumi_cache (bangumi_id);
+
 -- ===== RLS =====
 alter table public.steam_rank_snapshots enable row level security;
 alter table public.steam_rank_snapshot_items enable row level security;
@@ -113,6 +131,7 @@ alter table public.pc_ownership_yearly enable row level security;
 alter table public.pc_browser_share_monthly enable row level security;
 alter table public.pc_shipments_quarterly enable row level security;
 alter table public.pc_search_engine_share_monthly enable row level security;
+alter table public.bangumi_cache enable row level security;
 
 -- Public read (site is public). Writes are done by server using service role (bypasses RLS).
 drop policy if exists "steam_rank_snapshots_read" on public.steam_rank_snapshots;
@@ -205,6 +224,28 @@ create policy "pc_search_engine_share_monthly_upsert_authed"
   on public.pc_search_engine_share_monthly
   for all
   to authenticated
+  using (true)
+  with check (true);
+
+-- Bangumi cache: public read, service role write
+drop policy if exists "bangumi_cache_read" on public.bangumi_cache;
+create policy "bangumi_cache_read"
+  on public.bangumi_cache
+  for select
+  using (true);
+
+drop policy if exists "bangumi_cache_insert_service" on public.bangumi_cache;
+create policy "bangumi_cache_insert_service"
+  on public.bangumi_cache
+  for insert
+  to service_role
+  with check (true);
+
+drop policy if exists "bangumi_cache_update_service" on public.bangumi_cache;
+create policy "bangumi_cache_update_service"
+  on public.bangumi_cache
+  for update
+  to service_role
   using (true)
   with check (true);
 

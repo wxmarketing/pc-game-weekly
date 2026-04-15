@@ -2,6 +2,7 @@ import { tryCreateSupabaseServiceClient } from "@/lib/supabase/server";
 import type { SteamAppBrief } from "@/lib/steam/appDetails";
 import type { EpicChartGame, TapGame, WgGame } from "@/lib/report/localLists";
 import { unstable_cache } from "next/cache";
+import { resolveSteamAppIdByName } from "@/lib/steam/resolveAppId";
 
 export type Row = Record<string, unknown>;
 
@@ -774,4 +775,201 @@ export async function loadTapTapTableFromSupabase(table: "taptap_hot_download" |
   if (!games.length) return null;
   const generatedAt = str(batch[0]!, "generated_at", "fetched_at", "updated_at", "created_at");
   return { games, generatedAt };
+}
+
+/* ============================================
+   entity_topics — 行业新鲜事
+   ============================================ */
+
+export interface EntityTopicArticle {
+  title: string;
+  url: string;
+  source: string;
+}
+
+export interface EntityTopic {
+  id: string;
+  entity_type: "game" | "company" | "platform" | "other";
+  heat_level: "high" | "mid" | "low";
+  entity_name: string;
+  /** 从 entity_name 映射出的标准分类标签（如 "Steam"、"Epic"），用于前端显示 */
+  display_category: string;
+  summary_title: string;
+  summary_body: string;
+  articles: EntityTopicArticle[];
+  /** Supabase entity_score — 用于卡片排序（高分优先） */
+  entity_score?: number | null;
+  /** Phase 3 — Bangumi API */
+  cover_url?: string | null;
+  store_url?: string | null;
+  store_type?: string | null;
+  /** LLM 生成的一句话摘要 */
+  ai_summary?: string | null;
+  /** 服务端从 bangumi_cache 预取的游戏类型标签 */
+  bangumi_tags?: string[] | null;
+}
+
+/**
+ * 将 entity_name 映射到标准分类标签。
+ * 关键词匹配优先级：精确前缀 > 包含关键词 > 原名。
+ */
+const CATEGORY_RULES: [RegExp, string][] = [
+  [/steam|valve|v社|g胖/i, "Steam"],
+  [/epic/i, "Epic"],
+  [/ps[456]|playstation|索尼|sony|psv/i, "PlayStation"],
+  [/xbox|微软|microsoft/i, "Xbox"],
+  [/nintendo|任天堂|switch|马力欧|塞尔达|咚奇/i, "Nintendo"],
+  [/顽皮狗|naughty\s*dog/i, "顽皮狗"],
+  [/卡普空|capcom/i, "卡普空"],
+  [/育碧|ubisoft/i, "育碧"],
+  [/暴雪|blizzard/i, "暴雪"],
+  [/r星|rockstar/i, "R星"],
+  [/ea\b|艺电/i, "EA"],
+  [/腾讯|tencent/i, "腾讯"],
+  [/网易|netease/i, "网易"],
+  [/米哈游|hoyoverse|mihoyo/i, "米哈游"],
+  [/dlss|nvidia|英伟达/i, "NVIDIA"],
+  [/amd|radeon/i, "AMD"],
+  [/苹果|apple|mac/i, "Apple"],
+];
+
+function mapEntityCategory(entityName: string): string {
+  const name = entityName.trim();
+  for (const [re, label] of CATEGORY_RULES) {
+    if (re.test(name)) return label;
+  }
+  // 兜底：原名本身
+  return name;
+}
+
+export async function loadEntityTopicsFromSupabase(): Promise<EntityTopic[] | null> {
+  const supabase = tryCreateSupabaseServiceClient();
+  if (!supabase) return null;
+  try {
+    // period_end 早于当前时间 - 5 天的 entity 不拉取
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from("entity_topics")
+      .select("id,entity_name,entity_type,entity_level,summary_title,summary_body,articles,period_end,entity_score,ai_summary,created_at")
+      .or(`period_end.gte.${fiveDaysAgo},period_end.is.null`)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error || !data?.length) return null;
+
+    const rows = data as unknown as Row[];
+
+    const topics = rows.map((r): EntityTopic => {
+      // DB articles: { title, link, source, pub_date }
+      // Frontend articles: { title, url, source }
+      const rawArticles = r.articles;
+      const articles: EntityTopicArticle[] = Array.isArray(rawArticles)
+        ? rawArticles.map((a: Record<string, unknown>) => ({
+            title: String(a.title ?? ""),
+            url: String(a.link ?? a.url ?? ""),
+            source: String(a.source ?? ""),
+          }))
+        : [];
+
+      const entityLevel = str(r, "entity_level") ?? "mid";
+      const heatLevel = (entityLevel === "high" || entityLevel === "mid" || entityLevel === "low")
+        ? entityLevel
+        : "mid";
+
+      const entityType = str(r, "entity_type") ?? "other";
+      const validType = (entityType === "game" || entityType === "company" || entityType === "platform" || entityType === "other")
+        ? entityType
+        : "other";
+
+      const rawName = str(r, "entity_name") ?? "";
+      const rawScore = (r as Record<string, unknown>).entity_score;
+      const rawAiSummary = (r as Record<string, unknown>).ai_summary;
+      return {
+        id: String(r.id ?? ""),
+        entity_type: validType,
+        heat_level: heatLevel,
+        entity_name: rawName,
+        display_category: mapEntityCategory(rawName),
+        summary_title: str(r, "summary_title") ?? "",
+        summary_body: str(r, "summary_body") ?? "",
+        articles,
+        entity_score: typeof rawScore === "number" ? rawScore : null,
+        ai_summary: typeof rawAiSummary === "string" ? rawAiSummary : null,
+        // 预留字段，后面服务端预填充会覆盖
+        cover_url: null,
+        bangumi_tags: null,
+      };
+    });
+
+    // ── 服务端预填充封面 ──
+    const gameEntities = topics.filter((t) => t.entity_type === "game");
+    if (gameEntities.length > 0) {
+      const gameNames = gameEntities.map((t) => t.entity_name);
+      
+      // 1. 先从 bangumi_cache 批量查询已缓存的封面（优先级最高）
+      const { data: cachedCovers } = await supabase
+        .from("bangumi_cache")
+        .select("entity_name,cover_url,tags,platform")
+        .in("entity_name", gameNames);
+      
+      const bangumiCoverMap = new Map<string, { cover_url: string; tags?: string[] | null; platform?: string | null }>();
+      if (cachedCovers?.length) {
+        for (const row of cachedCovers) {
+          if (row.cover_url) {
+            bangumiCoverMap.set(row.entity_name, {
+              cover_url: row.cover_url,
+              tags: row.tags,
+              platform: row.platform,
+            });
+          }
+        }
+      }
+      
+      // 2. 对于 Bangumi 没缓存的，用 Steam 封面保底
+      const needSteamFallback = gameEntities.filter((t) => !bangumiCoverMap.has(t.entity_name));
+      const steamCoverMap = new Map<string, string>();
+      if (needSteamFallback.length > 0) {
+        const steamResults = await Promise.allSettled(
+          needSteamFallback.map(async (t) => {
+            const appid = await resolveSteamAppIdByName(t.entity_name);
+            return { entity_name: t.entity_name, appid };
+          })
+        );
+        for (const result of steamResults) {
+          if (result.status === "fulfilled" && result.value.appid) {
+            const { entity_name, appid } = result.value;
+            steamCoverMap.set(
+              entity_name,
+              `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`
+            );
+          }
+        }
+      }
+      
+      // 3. 写入 cover_url：Bangumi > Steam
+      for (const t of topics) {
+        const bgm = bangumiCoverMap.get(t.entity_name);
+        if (bgm) {
+          t.cover_url = bgm.cover_url;
+          t.bangumi_tags = bgm.tags ?? null;
+        } else {
+          const steamCover = steamCoverMap.get(t.entity_name);
+          if (steamCover) {
+            t.cover_url = steamCover;
+          }
+        }
+      }
+      
+      // DEBUG: 打印服务端预填充结果
+      const withCovers = topics.filter(t => t.cover_url);
+      console.log(`[loadEntityTopicsFromSupabase] 服务端预填充封面: ${withCovers.length}/${gameEntities.length} 游戏有封面`);
+      if (withCovers.length > 0) {
+        console.log(`[loadEntityTopicsFromSupabase] 示例: ${withCovers[0]?.entity_name} -> ${withCovers[0]?.cover_url?.substring(0, 50)}...`);
+      }
+    }
+
+    return topics;
+  } catch {
+    return null;
+  }
 }

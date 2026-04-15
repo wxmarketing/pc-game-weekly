@@ -94,11 +94,12 @@ export interface StoreLinkState {
 }
 
 /**
- * 传入 bangumi_id（可选），返回 { storeLink, loadingStore, fetchStore }
+ * 传入 bangumi_id 和 entityName（可选），返回 { storeLink, loadingStore, fetchStore }
  * - fetchStore() 触发请求（用于点击/展开时调用）
  * - 自动 sessionStorage 缓存
+ * - 传 entityName 可以查 Supabase 缓存中手动设置的 store_url
  */
-export function useBangumiStoreLink(bangumiId: number | null | undefined) {
+export function useBangumiStoreLink(bangumiId: number | null | undefined, entityName?: string) {
   const [state, setState] = useState<StoreLinkState>({
     loading: false,
     data: null,
@@ -107,10 +108,10 @@ export function useBangumiStoreLink(bangumiId: number | null | undefined) {
   const fetchStore = useCallback(() => {
     if (!bangumiId) return;
     setState((prev) => ({ ...prev, loading: true }));
-    fetchStoreLinks(bangumiId).then((result) => {
+    fetchStoreLinks(bangumiId, entityName).then((result) => {
       setState({ loading: false, data: result });
     });
-  }, [bangumiId]);
+  }, [bangumiId, entityName]);
 
   // 当 bangumiId 变化时重置
   useEffect(() => {

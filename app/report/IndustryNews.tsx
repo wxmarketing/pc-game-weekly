@@ -145,8 +145,8 @@ function GameDetail({
   onClose: () => void;
   onCoverFixed?: (newCoverUrl: string) => void;
 }) {
-  // 按需拉取商店链接
-  const { storeLink, loadingStore, fetchStore } = useBangumiStoreLink(bangumiId);
+  // 按需拉取商店链接（传 entityName 以查 Supabase 缓存）
+  const { storeLink, loadingStore, fetchStore } = useBangumiStoreLink(bangumiId, topic.entity_name);
   const [showFixModal, setShowFixModal] = useState(false);
   const [localCoverUrl, setLocalCoverUrl] = useState(topic.cover_url);
 

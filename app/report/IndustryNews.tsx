@@ -10,8 +10,8 @@ import { BangumiFixModal } from "./BangumiFixModal";
    子 Tab 定义
    ============================================ */
 const SUB_TABS = [
-  { id: "hot-games", label: "什么游戏讨论度高？" },
   { id: "platforms", label: "平台有什么动向？" },
+  { id: "hot-games", label: "什么游戏讨论度高？" },
   { id: "companies", label: "厂商有什么动向？" },
   { id: "random", label: "随机新鲜事" },
 ] as const;
@@ -416,7 +416,7 @@ function RandomCard({
    ============================================ */
 export function IndustryNews({ data }: { data: EntityTopic[] }) {
   const topics = data.length > 0 ? data : [];
-  const [activeTab, setActiveTab] = useState<SubTabId>("hot-games");
+  const [activeTab, setActiveTab] = useState<SubTabId>("platforms");
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
   const [randomSeed, setRandomSeed] = useState(0);
 

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // upsert bangumi_cache 表
+    // upsert bangumi_cache 表，手动修正时锁定封面
     const { error } = await supabase
       .from("bangumi_cache")
       .upsert(
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
           entity_name,
           bangumi_id,
           cover_url,
+          cover_locked: true, // 手动修正的封面设为锁定
           name_cn: name_cn ?? null,
           name: name ?? null,
           tags: tags ?? null,

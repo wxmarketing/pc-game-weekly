@@ -25,9 +25,18 @@ type SubTabId = (typeof SUB_TABS)[number]["id"];
 /* ============================================
    辅助函数
    ============================================ */
-/** 按 entity_score 降序排（null/undefined 排最后） */
+/** 先按 heat_level 排序（high > mid > low），再按 entity_score 降序，最后按 id 稳定排序 */
 function sortByScore(list: EntityTopic[]): EntityTopic[] {
-  return [...list].sort((a, b) => (b.entity_score ?? -Infinity) - (a.entity_score ?? -Infinity));
+  const heatOrder: Record<string, number> = { high: 0, mid: 1, low: 2 };
+  return [...list].sort((a, b) => {
+    const heatA = heatOrder[a.heat_level ?? "low"] ?? 2;
+    const heatB = heatOrder[b.heat_level ?? "low"] ?? 2;
+    if (heatA !== heatB) return heatA - heatB; // 高热度优先
+    const scoreDiff = (b.entity_score ?? -Infinity) - (a.entity_score ?? -Infinity);
+    if (scoreDiff !== 0) return scoreDiff; // 同热度按分数降序
+    // 稳定排序：分数相同时按 id 排序，避免 SSR/客户端顺序不一致
+    return a.id.localeCompare(b.id);
+  });
 }
 
 function filterByTab(data: EntityTopic[], tabId: SubTabId): EntityTopic[] {
@@ -109,7 +118,7 @@ function GameCard({
       className="in-card in-card--game group"
       onClick={onClick}
     >
-      {/* 封面背景 */}
+      {/* 封面背景（渐变用 CSS ::after 实现） */}
       <div className="in-card-cover">
         <img
           src={topic.cover_url || "/no-cover.png"}
@@ -120,12 +129,15 @@ function GameCard({
           suppressHydrationWarning
         />
       </div>
-      {/* 底部信息 */}
+      {/* 底部信息：热度标签 + 游戏名 */}
       <div className="in-card-meta">
-        <div className="in-card-name">{topic.entity_name}</div>
-        <span className={`in-heat-pill ${topic.heat_level === "high" ? "in-heat-pill--high" : "in-heat-pill--mid"}`}>
+        <span
+          className={`in-heat-label ${topic.heat_level === "high" ? "in-heat-label--high" : "in-heat-label--mid"}`}
+          suppressHydrationWarning
+        >
           {topic.heat_level === "high" ? "高热度" : "中热度"}
         </span>
+        <div className="in-card-name">{topic.entity_name}</div>
       </div>
     </button>
   );
@@ -158,6 +170,15 @@ function GameDetail({
   // 优先用已有数据，fallback 到 Bangumi 拉取结果
   const finalStoreUrl = topic.store_url || storeLink?.store_url;
   const finalStoreType = topic.store_type || storeLink?.store_type;
+  
+  // DEBUG: 追踪 store_url 来源
+  console.log(`[GameDetail] ${topic.entity_name}:`, {
+    'topic.store_url': topic.store_url,
+    'storeLink': storeLink,
+    'finalStoreUrl': finalStoreUrl,
+    'loadingStore': loadingStore,
+    'bangumiId': bangumiId,
+  });
   
   // 游戏类型标签（服务端预取 or 客户端 hook 注入）
   const tags = topic.bangumi_tags;
@@ -205,7 +226,7 @@ function GameDetail({
             onClick={() => setShowFixModal(true)}
             className="in-detail-fix-btn"
           >
-            🔧 修复关联
+            修复关联
           </button>
 
           {/* 游戏类型标签（胶囊样式）— 暂时隐藏 */}
@@ -449,8 +470,9 @@ export function IndustryNews({ data }: { data: EntityTopic[] }) {
   const expandedGame = expandedGameId
     ? enrichedFiltered.find((t) => t.id === expandedGameId) ?? null
     : null;
+  // 优先用服务端预填充的 bangumi_id，fallback 到 covers map
   const expandedBangumiId = expandedGame
-    ? covers[expandedGame.entity_name]?.bangumi_id ?? null
+    ? expandedGame.bangumi_id ?? covers[expandedGame.entity_name]?.bangumi_id ?? null
     : null;
   /* 随机抽 3 张 */
   const randomItems = useMemo(() => {
@@ -531,6 +553,7 @@ export function IndustryNews({ data }: { data: EntityTopic[] }) {
           <>
             {expandedGame ? (
               <GameDetail
+                key={expandedGame.id}
                 topic={expandedGame}
                 bangumiId={expandedBangumiId}
                 onClose={() => setExpandedGameId(null)}

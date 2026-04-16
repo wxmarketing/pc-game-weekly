@@ -27,6 +27,13 @@ function notifyListeners() {
   listeners.forEach((l) => l());
 }
 
+/** 手动更新全局封面缓存（供 BangumiFixModal 等外部调用） */
+export function updateGlobalCoverCache(entityName: string, data: BangumiCoverResult) {
+  globalCoverCache[entityName] = data;
+  globalFetchedNames.add(entityName);
+  notifyListeners();
+}
+
 function subscribeToCache(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
@@ -114,10 +121,10 @@ export function useBangumiStoreLink(bangumiId: number | null | undefined, entity
     });
   }, [bangumiId, entityName]);
 
-  // 当 bangumiId 变化时重置
+  // 当 bangumiId 或 entityName 变化时重置
   useEffect(() => {
     setState({ loading: false, data: null });
-  }, [bangumiId]);
+  }, [bangumiId, entityName]);
 
   return {
     storeLink: state.data,

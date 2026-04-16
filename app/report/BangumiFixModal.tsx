@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { updateSessionCoverCache } from "@/lib/bangumi/api";
+import { updateGlobalCoverCache } from "@/lib/bangumi/hooks";
 
 const BGM_API = "https://api.bgm.tv/v0";
 
@@ -96,10 +98,20 @@ export function BangumiFixModal({
         throw new Error(text || "保存失败");
       }
 
+      const safeCoverUrl = coverUrl.replace(/^http:\/\//, "https://");
+      
+      // 同步更新客户端缓存，避免页面切换后恢复旧封面
+      const cacheData = {
+        bangumi_id: selected.id,
+        cover_url: safeCoverUrl,
+      };
+      updateSessionCoverCache(entityName, cacheData);
+      updateGlobalCoverCache(entityName, cacheData);
+
       // 通知父组件更新
       onFixed({
         bangumi_id: selected.id,
-        cover_url: coverUrl.replace(/^http:\/\//, "https://"),
+        cover_url: safeCoverUrl,
         name_cn: selected.name_cn,
       });
       onClose();
@@ -111,54 +123,56 @@ export function BangumiFixModal({
   }, [selectedId, results, entityName, onFixed, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="bg-[#181818] rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border border-[#282828]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="px-6 py-4 border-b border-[#282828] flex items-center justify-between">
+          <h2 className="text-base font-semibold text-white tracking-tight">
             修复 Bangumi 关联
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-[#909090] hover:text-white hover:bg-[#282828] transition-colors"
           >
-            ✕
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
           </button>
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-1">
           {/* 当前状态 */}
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              当前游戏：<span className="font-medium text-gray-900 dark:text-gray-100">{entityName}</span>
+          <div className="mb-5 p-4 bg-[#1f1f1f] rounded-lg border border-[#282828]">
+            <p className="text-sm text-[#909090]">
+              当前游戏：<span className="font-medium text-white">{entityName}</span>
             </p>
             {currentCoverUrl && (
-              <div className="mt-2 flex items-center gap-3">
-                <span className="text-sm text-gray-500">当前封面：</span>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="text-sm text-[#909090]">当前封面：</span>
                 <img
                   src={currentCoverUrl}
                   alt="当前封面"
-                  className="w-16 h-16 object-cover rounded"
+                  className="w-16 h-20 object-cover rounded"
                 />
               </div>
             )}
           </div>
 
           {/* 搜索框 */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-3 mb-5">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="输入游戏名搜索 Bangumi..."
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-2.5 border border-[#333] rounded-lg bg-[#121212] text-white placeholder-[#606060] focus:outline-none focus:border-[#1ed760] transition-colors"
             />
             <button
               onClick={handleSearch}
               disabled={loading || !query.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-[#1ed760] text-[#121212] font-semibold rounded-full hover:bg-[#1fdf64] hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all"
             >
               {loading ? "搜索中..." : "搜索"}
             </button>
@@ -166,7 +180,7 @@ export function BangumiFixModal({
 
           {/* 错误提示 */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-900/20 text-red-400 rounded-lg text-sm border border-red-900/30">
               {error}
             </div>
           )}
@@ -174,7 +188,7 @@ export function BangumiFixModal({
           {/* 搜索结果 */}
           {results.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              <p className="text-sm text-[#909090] mb-3">
                 搜索结果（点击选择正确的条目）：
               </p>
               {results.map((item) => {
@@ -186,12 +200,12 @@ export function BangumiFixModal({
                     onClick={() => setSelectedId(item.id)}
                     className={`w-full flex items-center gap-4 p-3 rounded-lg border transition-all ${
                       isSelected
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        ? "border-[#1ed760] bg-[#1ed760]/10"
+                        : "border-[#282828] bg-[#1f1f1f] hover:border-[#333] hover:bg-[#252525]"
                     }`}
                   >
                     {/* 封面 */}
-                    <div className="w-16 h-20 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
+                    <div className="w-14 h-[70px] flex-shrink-0 bg-[#282828] rounded overflow-hidden">
                       {coverUrl ? (
                         <img
                           src={coverUrl.replace(/^http:\/\//, "https://")}
@@ -199,30 +213,30 @@ export function BangumiFixModal({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                        <div className="w-full h-full flex items-center justify-center text-[#606060] text-xs">
                           无封面
                         </div>
                       )}
                     </div>
                     {/* 信息 */}
                     <div className="flex-1 text-left min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <p className="font-medium text-white truncate">
                         {item.name_cn || item.name}
                       </p>
                       {item.name_cn && item.name !== item.name_cn && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-sm text-[#b3b3b3] truncate">
                           {item.name}
                         </p>
                       )}
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        {item.date && `发售日期: ${item.date}`}
+                      <p className="text-xs text-[#606060] mt-1">
+                        {item.date && `${item.date}`}
                         {item.platform && ` · ${item.platform}`}
                         {` · ID: ${item.id}`}
                       </p>
                     </div>
                     {/* 选中标记 */}
                     {isSelected && (
-                      <div className="text-blue-600 dark:text-blue-400 text-lg">✓</div>
+                      <div className="text-[#1ed760] text-lg">✓</div>
                     )}
                   </button>
                 );
@@ -232,24 +246,24 @@ export function BangumiFixModal({
 
           {/* 空状态 */}
           {!loading && results.length === 0 && query && (
-            <p className="text-center text-gray-400 py-8">
+            <p className="text-center text-[#606060] py-8">
               点击"搜索"按钮查找 Bangumi 条目
             </p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-[#282828] flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+            className="px-5 py-2 text-[#b3b3b3] hover:text-white font-medium transition-colors"
           >
             取消
           </button>
           <button
             onClick={handleConfirm}
             disabled={!selectedId || saving}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-[#1ed760] text-[#121212] font-semibold rounded-full hover:bg-[#1fdf64] hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all"
           >
             {saving ? "保存中..." : "确认修复"}
           </button>

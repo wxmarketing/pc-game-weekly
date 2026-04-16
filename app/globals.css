@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ============================================
-   PC 游戏行业周报 — 杂志编辑风设计系统
-   美学方向：高端行业杂志 × 报纸印刷排版
+   PC 游戏行业周报 — Spotify 暗色风格设计系统
+   美学方向：深邃暗色 × 圆润药丸几何 × 绿色强调
    ============================================ */
 
 /* ---- Google Fonts: 通过 layout.tsx <link> 加载 ---- */
@@ -57,91 +57,90 @@
 
 @theme inline {
   /* ============================================
-     表面 — 近纸白，温暖但不发黄
+     表面 — Spotify 深色系
      ============================================ */
-  --color-bg-deep: oklch(97.5% 0.004 80);
-  --color-bg-base: oklch(99.5% 0.002 80);
-  --color-bg-surface: oklch(96% 0.005 80);
-  --color-bg-raised: oklch(94% 0.008 80);
-  --color-bg-ink: oklch(15% 0.015 60);
+  --color-bg-deep: #121212;
+  --color-bg-base: #181818;
+  --color-bg-surface: #1f1f1f;
+  --color-bg-raised: #252525;
+  --color-bg-ink: #000000;
 
   /* ============================================
-     文字 — 报纸印刷色，有温度的深色
+     文字 — 白/灰层次
      ============================================ */
-  --color-text-primary: oklch(12% 0.02 55);
-  --color-text-secondary: oklch(35% 0.012 55);
-  --color-text-muted: oklch(55% 0.008 55);
-  --color-text-inverse: oklch(97% 0.004 80);
-  --color-text-accent: oklch(42% 0.18 15);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-muted: #909090;
+  --color-text-inverse: #121212;
+  --color-text-accent: #1ed760;
 
   /* ============================================
-     边框 — 极细、有存在感的分隔
+     边框 — 深色系边框
      ============================================ */
-  --color-border: oklch(85% 0.006 80);
-  --color-border-light: oklch(91% 0.004 80);
-  --color-border-strong: oklch(70% 0.01 60);
-  --color-border-rule: oklch(25% 0.015 55);
+  --color-border: #282828;
+  --color-border-light: #333333;
+  --color-border-strong: #4d4d4d;
+  --color-border-rule: #404040;
 
   /* ============================================
-     语义色 — 低彩度，编辑风格
+     语义色 — Spotify 语义色系
      ============================================ */
-  --color-rise: oklch(45% 0.16 155);
-  --color-rise-soft: oklch(95% 0.02 155);
-  --color-rise-border: oklch(85% 0.05 155);
+  --color-rise: #1ed760;
+  --color-rise-soft: rgba(30, 215, 96, 0.15);
+  --color-rise-border: rgba(30, 215, 96, 0.4);
 
-  --color-drop: oklch(50% 0.18 25);
-  --color-drop-soft: oklch(95% 0.02 25);
-  --color-drop-border: oklch(85% 0.05 25);
+  --color-drop: #f3727f;
+  --color-drop-soft: rgba(243, 114, 127, 0.15);
+  --color-drop-border: rgba(243, 114, 127, 0.4);
 
-  --color-discount: oklch(45% 0.15 310);
-  --color-discount-soft: oklch(95% 0.02 310);
-  --color-discount-border: oklch(85% 0.04 310);
+  --color-discount: #b4a7d6;
+  --color-discount-soft: rgba(180, 167, 214, 0.15);
+  --color-discount-border: rgba(180, 167, 214, 0.4);
 
-  --color-free: oklch(42% 0.12 250);
-  --color-free-soft: oklch(94% 0.02 250);
-  --color-free-border: oklch(84% 0.04 250);
+  --color-free: #539df5;
+  --color-free-soft: rgba(83, 157, 245, 0.15);
+  --color-free-border: rgba(83, 157, 245, 0.4);
 
-  --color-new: oklch(50% 0.14 75);
-  --color-new-soft: oklch(94% 0.03 75);
-  --color-new-border: oklch(84% 0.06 75);
+  --color-new: #ffa42b;
+  --color-new-soft: rgba(255, 164, 43, 0.15);
+  --color-new-border: rgba(255, 164, 43, 0.4);
 
-  --color-steady: oklch(50% 0.01 55);
+  --color-steady: #727272;
 
   /* ============================================
-     强调色 — 编辑红（经典杂志强调色）
+     强调色 — Spotify Green
      ============================================ */
-  --color-accent: oklch(42% 0.18 15);
-  --color-accent-soft: oklch(95% 0.03 15);
+  --color-accent: #1ed760;
+  --color-accent-soft: rgba(30, 215, 96, 0.15);
 
   /* ============================================
-     平台色 — 克制的、仅用于小面积点缀
+     平台色 — Spotify 风格绿色系
      ============================================ */
-  --color-steam: oklch(45% 0.10 240);
-  --color-steam-soft: oklch(96% 0.015 240);
-  --color-wegame: oklch(50% 0.16 50);
-  --color-wegame-soft: oklch(96% 0.015 50);
-  --color-taptap: oklch(45% 0.14 160);
-  --color-taptap-soft: oklch(96% 0.015 160);
-  --color-epic: oklch(25% 0.01 260);
-  --color-epic-soft: oklch(96% 0.01 260);
-  --color-4399: oklch(50% 0.18 35);
-  --color-4399-soft: oklch(96% 0.015 35);
+  --color-steam: #1ed760;
+  --color-steam-soft: rgba(30, 215, 96, 0.15);
+  --color-wegame: #1ed760;
+  --color-wegame-soft: rgba(30, 215, 96, 0.15);
+  --color-taptap: #1ed760;
+  --color-taptap-soft: rgba(30, 215, 96, 0.15);
+  --color-epic: #1ed760;
+  --color-epic-soft: rgba(30, 215, 96, 0.15);
+  --color-4399: #1ed760;
+  --color-4399-soft: rgba(30, 215, 96, 0.15);
 
-  --color-news: oklch(48% 0.14 270);
-  --color-news-soft: oklch(96% 0.015 270);
+  --color-news: #1ed760;
+  --color-news-soft: rgba(83, 157, 245, 0.15);
 
   /* ============================================
-     字体 — 中英文配对策略
-     标题：Playfair Display（英） + Noto Serif SC（中）
-     正文：DM Sans（英） + Noto Sans SC（中）
+     字体 — Circular 风格（Inter 替代私有字体）
+     标题/正文：Inter + Noto Sans SC
      数据：JetBrains Mono
      ============================================ */
-  --font-display: var(--font-display), "Playfair Display", var(--font-cn-serif), "Noto Serif SC", Georgia, serif;
+  --font-display: var(--font-dm-sans), "DM Sans", var(--font-cn-sans), "Noto Sans SC", system-ui, sans-serif;
   --font-body: var(--font-dm-sans), "DM Sans", var(--font-cn-sans), "Noto Sans SC", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", monospace;
 
   /* ============================================
-     间距 — 4pt 基线，大段留白
+     间距 — 8pt 基线
      ============================================ */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -160,84 +159,85 @@
   --space-card-padding: 1.5rem;
 
   /* ============================================
-     圆角 — 极小，印刷感
+     圆角 — Spotify 药丸风格
      ============================================ */
-  --radius-card: 2px;
-  --radius-badge: 2px;
-  --radius-cover: 2px;
+  --radius-card: 8px;
+  --radius-badge: 4px;
+  --radius-cover: 6px;
   --radius-pill: 9999px;
 
   /* ============================================
-     阴影 — 几乎不用，靠线条分隔
+     阴影 — 深色背景下的重阴影
      ============================================ */
-  --shadow-card: none;
-  --shadow-card-hover: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-section: none;
 }
 
 :root {
-  --color-bg-deep: oklch(97.5% 0.004 80);
-  --color-bg-base: oklch(99.5% 0.002 80);
-  --color-bg-surface: oklch(96% 0.005 80);
-  --color-bg-raised: oklch(94% 0.008 80);
-  --color-bg-ink: oklch(15% 0.015 60);
+  --color-bg-deep: #121212;
+  --color-bg-base: #181818;
+  --color-bg-surface: #1f1f1f;
+  --color-bg-raised: #252525;
+  --color-bg-ink: #000000;
 
-  --color-text-primary: oklch(12% 0.02 55);
-  --color-text-secondary: oklch(35% 0.012 55);
-  --color-text-muted: oklch(55% 0.008 55);
-  --color-text-inverse: oklch(97% 0.004 80);
-  --color-text-accent: oklch(42% 0.18 15);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-muted: #909090;
+  --color-text-inverse: #121212;
+  --color-text-accent: #1ed760;
 
-  --color-border: oklch(85% 0.006 80);
-  --color-border-light: oklch(91% 0.004 80);
-  --color-border-strong: oklch(70% 0.01 60);
-  --color-border-rule: oklch(25% 0.015 55);
+  --color-border: #282828;
+  --color-border-light: #333333;
+  --color-border-strong: #4d4d4d;
+  --color-border-rule: #404040;
 
-  --color-rise: oklch(45% 0.16 155);
-  --color-rise-soft: oklch(95% 0.02 155);
-  --color-rise-border: oklch(85% 0.05 155);
-  --color-drop: oklch(50% 0.18 25);
-  --color-drop-soft: oklch(95% 0.02 25);
-  --color-drop-border: oklch(85% 0.05 25);
-  --color-discount: oklch(45% 0.15 310);
-  --color-discount-soft: oklch(95% 0.02 310);
-  --color-discount-border: oklch(85% 0.04 310);
-  --color-free: oklch(42% 0.12 250);
-  --color-free-soft: oklch(94% 0.02 250);
-  --color-free-border: oklch(84% 0.04 250);
-  --color-new: oklch(50% 0.14 75);
-  --color-new-soft: oklch(94% 0.03 75);
-  --color-new-border: oklch(84% 0.06 75);
-  --color-steady: oklch(50% 0.01 55);
-  --color-accent: oklch(42% 0.18 15);
-  --color-accent-soft: oklch(95% 0.03 15);
+  --color-rise: #1ed760;
+  --color-rise-soft: rgba(30, 215, 96, 0.15);
+  --color-rise-border: rgba(30, 215, 96, 0.4);
+  --color-drop: #f3727f;
+  --color-drop-soft: rgba(243, 114, 127, 0.15);
+  --color-drop-border: rgba(243, 114, 127, 0.4);
+  --color-discount: #b4a7d6;
+  --color-discount-soft: rgba(180, 167, 214, 0.15);
+  --color-discount-border: rgba(180, 167, 214, 0.4);
+  --color-free: #1ed760;
+  --color-free-soft: rgba(30, 215, 96, 0.15);
+  --color-free-border: rgba(30, 215, 96, 0.4);
+  --color-new: #ffa42b;
+  --color-new-soft: rgba(255, 164, 43, 0.15);
+  --color-new-border: rgba(255, 164, 43, 0.4);
+  --color-steady: #727272;
+  --color-accent: #1ed760;
+  --color-accent-soft: rgba(30, 215, 96, 0.15);
 
-  --color-steam: oklch(45% 0.10 240);
-  --color-steam-soft: oklch(96% 0.015 240);
-  --color-wegame: oklch(50% 0.16 50);
-  --color-wegame-soft: oklch(96% 0.015 50);
-  --color-taptap: oklch(45% 0.14 160);
-  --color-taptap-soft: oklch(96% 0.015 160);
-  --color-epic: oklch(25% 0.01 260);
-  --color-epic-soft: oklch(96% 0.01 260);
-  --color-4399: oklch(50% 0.18 35);
-  --color-4399-soft: oklch(96% 0.015 35);
+  --color-steam: #1ed760;
+  --color-steam-soft: rgba(30, 215, 96, 0.15);
+  --color-wegame: #1ed760;
+  --color-wegame-soft: rgba(30, 215, 96, 0.15);
+  --color-taptap: #1ed760;
+  --color-taptap-soft: rgba(30, 215, 96, 0.15);
+  --color-epic: #1ed760;
+  --color-epic-soft: rgba(30, 215, 96, 0.15);
+  --color-4399: #1ed760;
+  --color-4399-soft: rgba(30, 215, 96, 0.15);
 
-  --color-news: oklch(48% 0.14 270);
-  --color-news-soft: oklch(96% 0.015 270);
+  --color-news: #1ed760;
+  --color-news-soft: rgba(83, 157, 245, 0.15);
 
-  --font-serif: "Playfair Display", var(--font-cn-serif), "Noto Serif SC", Georgia, serif;
+  --font-sans: var(--font-dm-sans), "DM Sans", var(--font-cn-sans), "Noto Sans SC", system-ui, sans-serif;
+  --font-serif: var(--font-dm-sans), "DM Sans", var(--font-cn-sans), "Noto Sans SC", system-ui, sans-serif;
   --font-sans-cn: var(--font-cn-sans), "Noto Sans SC", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", monospace;
 
   --space-section: 2.5rem;
   --space-card-padding: 1.5rem;
-  --radius-card: 2px;
-  --radius-badge: 2px;
-  --radius-cover: 2px;
+  --radius-card: 8px;
+  --radius-badge: 4px;
+  --radius-cover: 6px;
   --radius-pill: 9999px;
-  --shadow-card: none;
-  --shadow-card-hover: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-section: none;
 }
 
@@ -264,15 +264,15 @@ body {
 }
 
 /* ============================================
-   字体排版 — 衬线标题的戏剧性
+   字体排版 — Spotify 无衬线风格
    ============================================ */
 .font-display {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
 }
 
 .font-editorial {
-  font-family: var(--font-serif);
-  font-style: italic;
+  font-family: var(--font-sans);
+  font-weight: 700;
 }
 
 .font-mono {
@@ -294,9 +294,9 @@ body {
 .text-xs  { letter-spacing: 0.02em; }
 
 /* ============================================
-   CJK 排版修正 — 中文环境优化
+   CJK 排版修正 — 中文环境优化（暗色主题）
    ============================================ */
-/* 中文标题：letter-spacing 归零或微正，line-height 略松 */
+/* 中文标题：无衬线，字距微正 */
 :lang(zh) .font-display,
 :lang(zh-CN) .font-display {
   letter-spacing: 0.02em;
@@ -319,11 +319,11 @@ body {
   line-height: 1.2;
 }
 
-/* 中文衬线斜体不存在，font-editorial 在中文下使用正体加粗 */
+/* 中文加粗风格 */
 :lang(zh) .font-editorial,
 :lang(zh-CN) .font-editorial {
   font-style: normal;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
@@ -497,7 +497,7 @@ body {
   }
 
   /* ============================================
-     排名徽章 — 报纸印刷风
+     排名徽章 — Spotify 风格
      ============================================ */
   .rank-badge {
     display: inline-flex;
@@ -505,30 +505,31 @@ body {
     justify-content: center;
     width: 1.75rem;
     height: 1.75rem;
-    font-weight: 900;
+    font-weight: 700;
     font-size: 0.8125rem;
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
     letter-spacing: -0.02em;
     line-height: 1;
+    border-radius: 50%;
   }
 
   .rank-badge-gold {
-    background: var(--color-bg-ink);
+    background: var(--color-accent);
     color: var(--color-text-inverse);
   }
 
   .rank-badge-silver {
-    background: var(--color-text-secondary);
-    color: var(--color-text-inverse);
+    background: var(--color-bg-raised);
+    color: var(--color-text-primary);
   }
 
   .rank-badge-bronze {
-    border: 2px solid var(--color-text-secondary);
+    border: 2px solid var(--color-border-strong);
     color: var(--color-text-secondary);
   }
 
   /* ============================================
-     行交互 — 极微妙
+     行交互 — Spotify 绿色指示
      ============================================ */
   .row-hover {
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
@@ -539,32 +540,31 @@ body {
   }
 
   /* ============================================
-     Pill 样式 — 编辑风
+     Pill 样式 — Spotify 药丸风格
      ============================================ */
   .pill-muted {
     border-radius: var(--radius-pill);
     background-color: var(--color-bg-surface);
     color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
+    border: none;
   }
 
   .pill-neutral {
     border-radius: var(--radius-pill);
     background-color: var(--color-bg-surface);
     color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
+    border: none;
   }
 
   .pill-interactive {
     border-radius: var(--radius-pill);
     background-color: var(--color-bg-surface);
     color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    border: none;
+    transition: background-color 150ms ease, color 150ms ease;
   }
   .pill-interactive:hover {
     background-color: var(--color-bg-raised);
-    border-color: var(--color-border-strong);
     color: var(--color-text-primary);
   }
 
@@ -591,8 +591,8 @@ body {
      大数字显示
      ============================================ */
   .hero-number {
-    font-family: var(--font-serif);
-    font-weight: 900;
+    font-family: var(--font-sans);
+    font-weight: 700;
     letter-spacing: -0.04em;
     line-height: 1;
     color: var(--color-text-primary);
@@ -648,7 +648,7 @@ body {
   }
 
   /* ============================================
-     侧边栏布局 — 杂志编辑风
+     侧边栏布局 — Spotify 风格
      ============================================ */
   .sidebar-layout {
     display: flex;
@@ -664,7 +664,7 @@ body {
     display: flex;
     flex-direction: column;
     background: var(--color-bg-base);
-    border-right: 1px solid var(--color-border-light);
+    border-right: none;
     z-index: 100;
     padding: 0;
     overflow-y: auto;
@@ -675,14 +675,14 @@ body {
   /* 品牌区 */
   .sidebar-brand {
     padding: 1.75rem 1.25rem 1.25rem;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: none;
   }
 
   .sidebar-brand-title {
     display: block;
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 1.125rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.1;
     color: var(--color-text-primary);
     letter-spacing: -0.02em;
@@ -690,9 +690,9 @@ body {
 
   .sidebar-brand-subtitle {
     display: block;
-    font-family: var(--font-editorial);
+    font-family: var(--font-sans);
     font-size: 1.125rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.1;
     color: var(--color-text-accent);
     letter-spacing: -0.02em;
@@ -759,10 +759,59 @@ body {
     border-radius: 0 2px 2px 0;
   }
 
+  /* 分组项 */
+  .sidebar-nav-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-nav-item--group {
+    justify-content: flex-start;
+  }
+
+  .sidebar-nav-chevron {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .sidebar-nav-chevron--open {
+    transform: rotate(180deg);
+  }
+
+  /* 子项容器 - 收起状态 */
+  .sidebar-nav-children {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.2s ease;
+    overflow: hidden;
+  }
+
+  .sidebar-nav-children--open {
+    grid-template-rows: 1fr;
+  }
+
+  .sidebar-nav-children-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* 子项按钮 */
+  .sidebar-nav-item--child {
+    padding-left: 2rem;
+    font-size: 0.75rem;
+  }
+
+  .sidebar-nav-item--child .sidebar-nav-dot {
+    width: 5px;
+    height: 5px;
+  }
+
   /* 侧边栏底部信息 */
   .sidebar-footer {
     padding: 1rem 1.25rem;
-    border-top: 1px solid var(--color-border-light);
+    border-top: none;
     margin-top: auto;
   }
 
@@ -794,11 +843,11 @@ body {
 
   /* Section 标题（侧边栏模式下直接在内容区显示） */
   .section-title {
-    font-family: "Noto Serif SC", "Source Han Serif SC", "STSong", serif;
+    font-family: var(--font-sans);
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--color-text-primary);
-    letter-spacing: 0.05em;
+    letter-spacing: -0.01em;
     line-height: 1.2;
     margin-bottom: 0.5rem;
   }
@@ -840,11 +889,11 @@ body {
   }
 
   .sticky-nav--scrolled {
-    background-color: oklch(99.5% 0.002 80 / 0.85);
+    background-color: rgba(18, 18, 18, 0.85);
     backdrop-filter: blur(12px) saturate(1.2);
     -webkit-backdrop-filter: blur(12px) saturate(1.2);
     border-bottom-color: var(--color-border-light);
-    box-shadow: 0 1px 8px -2px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   .sticky-nav-inner {
@@ -991,7 +1040,7 @@ body {
     margin-top: 0.25rem;
     font-size: 0.6875rem;
     color: var(--color-text-muted);
-    opacity: 0.65;
+    opacity: 0.85;
   }
 
   /* 底部备注 */
@@ -1001,7 +1050,7 @@ body {
     border-top: 1px solid var(--color-border-light);
     font-size: 0.6875rem;
     color: var(--color-text-muted);
-    opacity: 0.55;
+    opacity: 0.8;
     text-align: right;
     letter-spacing: 0.02em;
   }
@@ -1076,7 +1125,7 @@ body {
     overflow: hidden;
   }
 
-  /* ---- 游戏卡片 — Epic 商店风格 ---- */
+  /* ---- 游戏卡片 — 参考图风格 ---- */
   .in-card--game {
     position: relative;
     display: flex;
@@ -1086,23 +1135,32 @@ body {
     cursor: pointer;
     text-align: left;
     padding: 0;
-    border-radius: 4px;
-    overflow: hidden;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.25s ease;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .in-card--game:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
   }
 
-  /* 封面图 — 主视觉 */
+  /* 封面图 — 四圆角 + 底部渐变（用伪元素） */
   .in-card-cover {
+    position: relative;
     width: 100%;
     aspect-ratio: 3 / 4;
     background: var(--color-bg-surface);
+    border-radius: 8px;
     overflow: hidden;
+  }
+
+  .in-card-cover::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+    pointer-events: none;
   }
 
   .in-card-cover img {
@@ -1129,19 +1187,37 @@ body {
 
   /* 底部信息区 */
   .in-card-meta {
-    padding: 0.625rem 0.125rem;
+    padding: 0.75rem 0.125rem 0;
   }
 
+  /* 热度文字标签 — 较小 */
+  .in-heat-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
+  }
+
+  .in-heat-label--high {
+    color: #1ed760; /* Spotify 绿 */
+  }
+
+  .in-heat-label--mid {
+    color: #a7f3d0; /* 更淡的绿色 */
+  }
+
+  /* 游戏名 — 较大 */
   .in-card-name {
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     color: var(--color-text-primary);
     line-height: 1.3;
-    margin-bottom: 0.125rem;
   }
 
-  /* 热度胶囊标签 */
+  /* 兼容旧胶囊样式（其他地方可能用到） */
   .in-heat-pill {
     display: inline-flex;
     align-items: center;
@@ -1156,21 +1232,21 @@ body {
   }
 
   .in-heat-pill--high {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
+    background: rgba(30, 215, 96, 0.15);
+    color: #1ed760;
   }
 
   .in-heat-pill--mid {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
+    background: rgba(110, 231, 160, 0.15);
+    color: #6ee7a0;
   }
 
-  /* ---- 游戏展开详情 — Epic 风格 ---- */
+  /* ---- 游戏展开详情 — Spotify 风格 ---- */
   .in-detail {
     background: var(--color-bg-base);
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 1.75rem;
-    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
   }
 
   /* grid 容器：封面左列 80px，内容右列自适应 */
@@ -1222,9 +1298,9 @@ body {
   }
 
   .in-detail-title {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 1.375rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--color-text-primary);
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -1331,8 +1407,6 @@ body {
     border-color: var(--color-accent);
     background: rgba(59, 130, 246, 0.05);
   }
-    opacity: 0.6;
-  }
 
   /* 游戏类型标签 — 胶囊样式 */
   .in-detail-genre {
@@ -1391,8 +1465,8 @@ body {
   }
 
   .in-source-chip:hover {
-    color: var(--color-news);
-    background: var(--color-news-soft);
+    color: var(--color-accent);
+    background: rgba(30, 215, 96, 0.15);
   }
 
   .in-source-chip span {
@@ -1403,26 +1477,26 @@ body {
 
   .in-source-from {
     color: var(--color-text-muted);
-    opacity: 0.6;
+    opacity: 0.85;
     font-size: 0.625rem;
   }
 
-  /* ---- 通用 Info 卡片（厂商/平台）— 阴影风格，与详情卡片统一 ---- */
+  /* ---- 通用 Info 卡片（厂商/平台）— Spotify 风格 ---- */
   .in-card--info {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     background: var(--color-bg-base);
-    border-radius: 6px;
+    border-radius: 8px;
     border: none;
-    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
                 box-shadow 0.25s ease;
   }
 
   .in-card--info:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 
   .in-info-header {
@@ -1464,23 +1538,23 @@ body {
     gap: 0.25rem;
   }
 
-  /* ---- 随机新鲜事卡片 — 阴影风格，与详情卡片统一 ---- */
+  /* ---- 随机新鲜事卡片 — Spotify 风格 ---- */
   .in-card--random {
     min-width: 0;               /* 防止 grid 子项被内容撑开 */
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     background: var(--color-bg-base);
-    border-radius: 6px;
+    border-radius: 8px;
     border: none;
-    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
                 box-shadow 0.25s ease;
   }
 
   .in-card--random:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 
   .in-random-title {
@@ -1570,8 +1644,8 @@ body {
     color: var(--color-text-secondary);
     background: var(--color-bg-base);
     border: none;
-    border-radius: 6px;
-    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
+    border-radius: 9999px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     cursor: pointer;
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
                 box-shadow 0.25s ease,
@@ -1581,7 +1655,7 @@ body {
   .in-refresh-btn:hover {
     color: var(--color-text-primary);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   }
 
   .in-refresh-icon {
@@ -1621,11 +1695,12 @@ body {
       grid-template-columns: repeat(3, 1fr);
     }
   }
+}
 
 /* ============================================
-   印刷风选择样式
+   Spotify 风格选择样式
    ============================================ */
 ::selection {
-  background: oklch(42% 0.18 15 / 0.15);
+  background: rgba(30, 215, 96, 0.3);
   color: var(--color-text-primary);
 }

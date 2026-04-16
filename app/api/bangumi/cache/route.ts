@@ -19,20 +19,36 @@ export async function POST(request: Request) {
 
     const supabase = createSupabaseServiceClient();
 
+    // 先检查是否已锁定封面
+    const { data: existing } = await supabase
+      .from("bangumi_cache")
+      .select("cover_locked")
+      .eq("entity_name", entity_name)
+      .single();
+
+    const isLocked = existing?.cover_locked === true;
+
     // upsert：存在则更新，不存在则插入
+    // 如果封面已锁定，则不更新 cover_url
+    const updateData: Record<string, unknown> = {
+      entity_name,
+      bangumi_id: bangumi_id ?? null,
+      store_url: store_url ?? null,
+      store_type: store_type ?? null,
+      name_cn: name_cn ?? null,
+      name: name ?? null,
+      tags: tags ?? null, // 游戏类型标签数组
+      platform: platform ?? null, // 平台信息
+      updated_at: new Date().toISOString(),
+    };
+
+    // 只有未锁定时才更新封面
+    if (!isLocked) {
+      updateData.cover_url = cover_url ?? null;
+    }
+
     const { error } = await supabase.from("bangumi_cache").upsert(
-      {
-        entity_name,
-        bangumi_id: bangumi_id ?? null,
-        cover_url: cover_url ?? null,
-        store_url: store_url ?? null,
-        store_type: store_type ?? null,
-        name_cn: name_cn ?? null,
-        name: name ?? null,
-        tags: tags ?? null, // 游戏类型标签数组
-        platform: platform ?? null, // 平台信息
-        updated_at: new Date().toISOString(),
-      },
+      updateData,
       { onConflict: "entity_name" }
     );
 

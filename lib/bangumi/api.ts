@@ -119,6 +119,19 @@ function setCache(key: string, value: unknown): void {
   }
 }
 
+/** 手动更新 sessionStorage 封面缓存（供 BangumiFixModal 等外部调用） */
+export function updateSessionCoverCache(entityName: string, data: BangumiCoverResult): void {
+  const cacheKey = COVER_CACHE_PREFIX + entityName;
+  setCache(cacheKey, data);
+  // 清除可能存在的 null 标记
+  const nullKey = cacheKey + "_null";
+  try {
+    sessionStorage.removeItem(nullKey);
+  } catch {
+    // ignore
+  }
+}
+
 /* ============================================
    搜索结果匹配策略
    ============================================ */
@@ -395,9 +408,10 @@ export async function fetchStoreLinks(
   // 2. 如果有 entityName，查 Supabase 缓存
   if (entityName) {
     const dbCached = await getSupabaseCache(entityName);
-    if (dbCached?.store_url && dbCached?.store_type) {
+    if (dbCached?.store_url) {
+      // 即使 store_type 为空也返回（兼容旧数据），默认用 "steam"
       const result: BangumiStoreLink = {
-        store_type: dbCached.store_type,
+        store_type: dbCached.store_type || "steam",
         store_url: dbCached.store_url,
       };
       setCache(cacheKey, result);

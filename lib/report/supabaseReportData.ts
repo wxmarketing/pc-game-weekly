@@ -803,6 +803,7 @@ export interface EntityTopic {
   cover_url?: string | null;
   store_url?: string | null;
   store_type?: string | null;
+  bangumi_id?: number | null;
   /** LLM 生成的一句话摘要 */
   ai_summary?: string | null;
   /** 服务端从 bangumi_cache 预取的游戏类型标签 */
@@ -909,10 +910,10 @@ export async function loadEntityTopicsFromSupabase(): Promise<EntityTopic[] | nu
       // 1. 先从 bangumi_cache 批量查询已缓存的封面（优先级最高）
       const { data: cachedCovers } = await supabase
         .from("bangumi_cache")
-        .select("entity_name,cover_url,tags,platform")
+        .select("entity_name,cover_url,tags,platform,store_url,store_type,bangumi_id")
         .in("entity_name", gameNames);
       
-      const bangumiCoverMap = new Map<string, { cover_url: string; tags?: string[] | null; platform?: string | null }>();
+      const bangumiCoverMap = new Map<string, { cover_url: string; tags?: string[] | null; platform?: string | null; store_url?: string | null; store_type?: string | null; bangumi_id?: number | null }>();
       if (cachedCovers?.length) {
         for (const row of cachedCovers) {
           if (row.cover_url) {
@@ -920,6 +921,9 @@ export async function loadEntityTopicsFromSupabase(): Promise<EntityTopic[] | nu
               cover_url: row.cover_url,
               tags: row.tags,
               platform: row.platform,
+              store_url: row.store_url,
+              store_type: row.store_type,
+              bangumi_id: row.bangumi_id,
             });
           }
         }
@@ -946,12 +950,15 @@ export async function loadEntityTopicsFromSupabase(): Promise<EntityTopic[] | nu
         }
       }
       
-      // 3. 写入 cover_url：Bangumi > Steam
+      // 3. 写入 cover_url + store_url：Bangumi > Steam
       for (const t of topics) {
         const bgm = bangumiCoverMap.get(t.entity_name);
         if (bgm) {
           t.cover_url = bgm.cover_url;
           t.bangumi_tags = bgm.tags ?? null;
+          t.store_url = bgm.store_url ?? null;
+          t.store_type = bgm.store_type ?? null;
+          t.bangumi_id = bgm.bangumi_id ?? null;
         } else {
           const steamCover = steamCoverMap.get(t.entity_name);
           if (steamCover) {

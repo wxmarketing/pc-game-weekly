@@ -372,8 +372,12 @@ export default async function ReportPage() {
           </p>
           <p className="text-xs text-text-muted">
             生成于{" "}
-            <time className="font-mono tabular-nums text-text-secondary" dateTime={new Date().toISOString()}>
-              {new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}
+            <time
+              className="font-mono tabular-nums text-text-secondary"
+              dateTime={dataUpdateDate ?? undefined}
+              suppressHydrationWarning
+            >
+              {dataUpdateDate ?? "—"}
             </time>
           </p>
         </div>

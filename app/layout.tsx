@@ -41,7 +41,7 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "PC 游戏行业周报",
+  title: "PC Signals",
   description: "PC 游戏行业数据周报",
 };
 

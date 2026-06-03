@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { updateSessionCoverCache } from "@/lib/bangumi/api";
 import { updateGlobalCoverCache } from "@/lib/bangumi/hooks";
 
-const BGM_API = "https://api.bgm.tv/v0";
+const BGM_API = "https://bgmapi.anibt.net/v0";
 
 interface SearchResult {
   id: number;

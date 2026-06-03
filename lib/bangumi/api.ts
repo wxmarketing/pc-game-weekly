@@ -13,7 +13,7 @@
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-const BGM_API = "https://api.bgm.tv/v0";
+const BGM_API = "https://bgmapi.anibt.net/v0";
 
 /* ============================================
    类型
@@ -63,10 +63,10 @@ async function getSupabaseCache(entityName: string): Promise<BangumiCacheRow | n
       .from("bangumi_cache")
       .select("*")
       .eq("entity_name", entityName)
-      .single();
+      .limit(1);
     
-    if (error || !data) return null;
-    return data as BangumiCacheRow;
+    if (error || !data || data.length === 0) return null;
+    return data[0] as BangumiCacheRow;
   } catch {
     return null;
   }
